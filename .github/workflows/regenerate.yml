@@ -15,7 +15,7 @@ on:
         required: true
         type: string
       service:
-        description: 'Service name (search)'
+        description: 'Service name (search-service)'
         required: true
         type: string
       spec_path:
@@ -40,7 +40,7 @@ on:
         type: string
 
 # Payload/input fields:
-#   service      (required) — must be "search"
+#   service      (required) — must be "search-service"
 #   pkg          (optional) — must be "search" when provided
 #   server       (optional) — hostname for getBaseURL(), defaults to <pkg>-service
 #   strip_prefix (optional) — gateway path prefix stripped in standalone New() (e.g. /sport-data/v3)
@@ -95,9 +95,9 @@ jobs:
       - name: Derive package name
         run: |
           PKG="${IN_PKG:-search}"
-          SERVICE="${SERVICE:-search}"
+          SERVICE="${SERVICE:-search-service}"
 
-          if [ "$SERVICE" != "search" ]; then
+          if [ "$SERVICE" != "search-service" ]; then
             echo "This repository only supports generating the search service. Received SERVICE='$SERVICE'."
             exit 1
           fi
