@@ -130,6 +130,9 @@ jobs:
           gh api "repos/${SPEC_REPO}/contents/${SPEC_PATH}?ref=${SPEC_REF}" \
             --jq '.content' | base64 -d > "api/${SERVICE}.yml"
 
+      - name: Stamp fetched spec version
+        run: go -C tools run ./stamp-fetched-spec-version
+
       - name: Derive PR conventional-commit prefix from upstream ref
         id: pr_meta
         env:
