@@ -510,3 +510,200 @@ void result;
 <!-- END AUTO-GENERATED -->
 
 
+
+
+## Operations notes and sequencing
+
+The search package mixes identity and content APIs. The auth endpoints are for obtaining a bearer token or a dedicated machine credential before a request that requires authorization, while the article endpoints are for discovery and detail fetching.
+
+- `loginWithEmailAndPassword` is the shortest path to an authenticated user session. Use it for scripts or interactive apps that already have an email and password and need an `AuthenticationResponse` with `accessToken`, `refreshToken`, and `accessTokenExpiryEpochSeconds`.
+- `createAccessKey` is better for backend integrations that should not store a user password. It returns a `key`, `token`, and `userId`, which makes it a safer long-lived credential for automation.
+- `search` is the main discovery endpoint. Most client code will start here with `contentType`, `country`, `q`, `limit`, and optional `tag` and `sort` values, then follow `links.next.href` to continue through the result set.
+- `retrieveAnArticleByID` is the detail endpoint for a single article once you already know the article `id` from a search result or an external link.
+
+These flows are commonly chained in sequence:
+1. Sign in with `loginWithEmailAndPassword` or create a dedicated credential with `createAccessKey`.
+2. Call `search` to find matching articles and copy the selected `id` from `response.embedded.articles[n].data.id`.
+3. Call `retrieveAnArticleByID({ id })` to fetch the full `Article` payload for rendering or validation.
+
+### Factual parameter notes
+
+- `createAccessKey` expects `body.name`; `body.description` is optional.
+- `loginWithEmailAndPassword` expects `body.email` and `body.password`.
+- `search` accepts a flat query object whose common keys are `contentType`, `country`, `q`, `limit`, `sort`, and `tag`; the response exposes `data.count`, `data.total`, `embedded.articles`, and optional `links.next.href` for pagination.
+- `retrieveAnArticleByID` requires an `id` path parameter and returns a single `Article` under `response.data`.
+
+## TypeScript examples
+
+### Create a machine credential
+
+```javascript
+import { API, Client } from "@viaplay/svn-sdk-ts/service/search";
+
+const api = new API(
+  new Client({
+    baseURL: process.env.GATEWAY_URL,
+    accessKey: process.env.ACCESS_KEY,
+  }),
+);
+
+const response = await api.createAccessKey({
+  body: {
+    name: "search-indexer",
+    description: "Used by the crawler to refresh the article index",
+  },
+});
+
+const createdKey = response.data;
+if (!createdKey) {
+  throw new Error("createAccessKey returned no payload");
+}
+
+console.log(createdKey.key, createdKey.userId);
+```
+
+### Log in with email and password
+
+```javascript
+import {
+  API,
+  AuthenticationResponse,
+  Client,
+} from "@viaplay/svn-sdk-ts/service/search";
+
+const api = new API(
+  new Client({
+    baseURL: process.env.GATEWAY_URL,
+  }),
+);
+
+const response = await api.loginWithEmailAndPassword({
+  body: {
+    email: "editor@example.com",
+    password: process.env.SEARCH_PASSWORD ?? "",
+  },
+});
+
+const auth = response.data;
+if (!auth) {
+  throw new Error("loginWithEmailAndPassword returned no payload");
+}
+
+const token: AuthenticationResponse = auth;
+console.log(token.accessTokenExpiryEpochSeconds);
+```
+
+### Search with filters and follow the next-page cursor
+
+```javascript
+import { API, Article, Client } from "@viaplay/svn-sdk-ts/service/search";
+
+const api = new API(
+  new Client({
+    baseURL: process.env.GATEWAY_URL,
+    accessKey: process.env.ACCESS_KEY,
+  }),
+);
+
+const response = await api.search({
+  query: {
+    contentType: "sports",
+    country: "se",
+    q: "Jens Stage",
+    tag: "sport:football",
+    sort: "createdAt:desc",
+    limit: 20,
+  },
+});
+
+const articles: Article[] = response.embedded.articles.map(({ data }) => data);
+const firstArticle = articles[0];
+if (firstArticle) {
+  console.log(firstArticle.id, firstArticle.title);
+}
+
+if (response.links.next?.href) {
+  const nextCursor = new URL(response.links.next.href).searchParams.get("cursor");
+  if (nextCursor) {
+    console.log("Next page cursor:", nextCursor);
+  }
+}
+```
+
+### Retrieve a single article and inspect nested media
+
+```javascript
+import {
+  API,
+  Article,
+  Client,
+  VideoVariant,
+} from "@viaplay/svn-sdk-ts/service/search";
+
+const api = new API(
+  new Client({
+    baseURL: process.env.GATEWAY_URL,
+    accessKey: process.env.ACCESS_KEY,
+  }),
+);
+
+const response = await api.retrieveAnArticleByID({
+  id: "82c374c8-5e3c-4ac1-8d20-93695b3375c0",
+});
+
+const article: Article = response.data;
+console.log(article.id, article.title, article.contentType);
+
+const firstVideo = article.videos[0];
+if (firstVideo && typeof firstVideo.horizontal === "object" && firstVideo.horizontal !== null) {
+  const horizontal = firstVideo.horizontal as VideoVariant;
+  console.log(horizontal.mediaGuid);
+}
+```
+
+### Handle a typed validation error
+
+```javascript
+import { API, Client, ErrValidation } from "@viaplay/svn-sdk-ts/service/search";
+
+const api = new API(
+  new Client({
+    baseURL: process.env.GATEWAY_URL,
+    accessKey: process.env.ACCESS_KEY,
+  }),
+);
+
+try {
+  await api.search({
+    query: {
+      contentType: "sports",
+      country: "se",
+      q: "",
+    },
+  });
+} catch (err) {
+  const e = err as { status?: number; payload?: unknown };
+  if (e.status === 422 && e.payload) {
+    const validation: ErrValidation = e.payload as ErrValidation;
+    console.log(validation.error.errCode);
+    console.log(validation.error.message);
+    if (validation.error.details) {
+      console.log(validation.error.details);
+    }
+  } else {
+    throw err;
+  }
+}
+```
+
+## Data Model
+
+The search package has a small but reusable response model surface centered on `Article`.
+
+- `Article`: shared by both `search` and `retrieveAnArticleByID`; each result includes `id`, `title`, `contentType`, `language`, `authors`, `videos`, `tags`, and optional `pictures` or `embedUrl`.
+- `Video`: appears inside `Article.videos` and captures the available `horizontal` and `vertical` asset variants.
+- `VideoVariant`: the actual media metadata for each video variant, including `mediaGuid`, `posterUrls`, and optional `duration`/`filename`.
+- `Author`: reused whenever an article includes a byline with `name` and `email`.
+- `Taxonomy`: represents the article's taxonomy buckets exposed via the `tags` field on `Article`.
+
+The SDK uses a strict response envelope, so read `response.data` and `response.embedded.articles[]` as typed values instead of using ad-hoc `any` conversions.

@@ -25,7 +25,7 @@ npm install @nentgroup/svn-sdk-ts
 
 This package is distributed as CommonJS.
 
-```ts
+```javascript
 const { SDK } = require("@viaplay/svn-sdk-ts");
 
 const sdk = new SDK({
@@ -51,7 +51,7 @@ Use the unified `SDK` to access the generated service:
 
 If you only need one service, import it directly:
 
-```ts
+```javascript
 const { API, Client } = require("@viaplay/svn-sdk-ts/service/search");
 
 const search = new API(new Client({
@@ -69,7 +69,7 @@ console.log(results.data.total);
 
 Operations throw typed payloads for known non-2xx responses. Unknown failures (network, timeout, unexpected status) are thrown as regular errors.
 
-```ts
+```javascript
 try {
   await sdk.search.retrieveAnArticleByID({ id: "unknown-id" });
 } catch (err) {
