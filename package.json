@@ -1,6 +1,6 @@
 {
   "name": "@viaplay/svn-sdk-ts",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "Generated TypeScript SDK for SVN/Viasport services",
   "type": "commonjs",
   "license": "UNLICENSED",
