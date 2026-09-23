@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.11](https://github.com/nentgroup/viasport-sdk-ts/compare/v0.1.10...v0.1.11) (2026-09-23)
+
+
+### Bug Fixes
+
+* author rosolution and logs ([#6](https://github.com/nentgroup/viasport-sdk-ts/issues/6)) ([cff03ee](https://github.com/nentgroup/viasport-sdk-ts/commit/cff03ee4bde8cd607ba806f876adc00f00c1927d))
+
 ## [0.1.10](https://github.com/nentgroup/viasport-sdk-ts/compare/v0.1.9...v0.1.10) (2026-09-23)
 
 
