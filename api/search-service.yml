@@ -1,7 +1,7 @@
 openapi: 3.2.0
 info:
   title: Viasport Search API Reference
-  version: "v2.3.2"
+  version: "v2.3.3"
   description: |
     Provides endpoints for discovering content in the Viaplay's sport-clips catalogue.
     

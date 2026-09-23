@@ -3,7 +3,7 @@
 Generated TypeScript clients for Viaplay SVN services, produced from the OpenAPI specs in `api/`.
 
 <!-- BEGIN GENERATED SDK VERSION -->
-> SDK version: `v1.30.5`
+> SDK version: `v0.1.10`
 <!-- END GENERATED SDK VERSION -->
 
 > [!NOTE]

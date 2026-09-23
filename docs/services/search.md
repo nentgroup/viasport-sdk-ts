@@ -1,7 +1,7 @@
 <!-- BEGIN AUTO-GENERATED -->
 # Viasport Search API Reference
 
-> **Version:** `3.0.0` &nbsp;·&nbsp; **Package:** `search` &nbsp;·&nbsp; [Interactive API Reference](../api-reference.html#search)
+> **Version:** `v2.3.3` &nbsp;·&nbsp; **Package:** `search` &nbsp;·&nbsp; [Interactive API Reference](../api-reference.html#search)
 
 Provides endpoints for discovering content in the Viaplay's sport-clips catalogue.
 
