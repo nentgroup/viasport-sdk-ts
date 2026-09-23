@@ -3,7 +3,7 @@
 # SVN SDK for TypeScript
 
 <!-- BEGIN GENERATED SDK VERSION -->
-> v1.30.5
+> v0.1.10
 <!-- END GENERATED SDK VERSION -->
 
 Go clients for Viaplay SVN services, generated from OpenAPI specs.
