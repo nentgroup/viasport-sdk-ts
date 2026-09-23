@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.9](https://github.com/nentgroup/viasport-sdk-ts/compare/v0.1.8...v0.1.9) (2026-09-23)
+
+
+### Bug Fixes
+
+* **ci:** remove search guardial ([4b0610d](https://github.com/nentgroup/viasport-sdk-ts/commit/4b0610d41ff849249051c5f2551c67c594555076))
+* **ci:** update regenerate workflow ([ec1e91b](https://github.com/nentgroup/viasport-sdk-ts/commit/ec1e91b001c5631baa485d5775e8597496fd9317))
+
 ## [0.1.8](https://github.com/nentgroup/viasport-sdk-ts/compare/v0.1.7...v0.1.8) (2026-09-23)
 
 
