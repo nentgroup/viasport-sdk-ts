@@ -3,7 +3,7 @@
 # SVN SDK for TypeScript
 
 <!-- BEGIN GENERATED SDK VERSION -->
-> v0.1.10
+> v0.1.11
 <!-- END GENERATED SDK VERSION -->
 
 TypeScript clients for Viaplay SVN services.

@@ -3,7 +3,7 @@
 Generated TypeScript clients for Viaplay SVN services.
 
 <!-- BEGIN GENERATED SDK VERSION -->
-> SDK version: `v0.1.10`
+> SDK version: `v0.1.11`
 <!-- END GENERATED SDK VERSION -->
 
 > [!NOTE]
