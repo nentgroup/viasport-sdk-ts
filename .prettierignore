@@ -13,4 +13,4 @@ src/service/**
 src/sdk.ts
 src/index.ts
 Taskfile.yml
-
+README.md

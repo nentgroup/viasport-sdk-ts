@@ -1,4 +1,4 @@
-# SVN SDK for TypeScript
+# Viasport SDK for TypeScript
 
 Generated TypeScript SDK for SVN/Viasport services from the OpenAPI specs in `api/`.
 
