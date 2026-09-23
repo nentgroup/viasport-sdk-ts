@@ -15,7 +15,7 @@ on:
         required: true
         type: string
       service:
-        description: 'Service name (search-service)'
+        description: 'Service name'
         required: true
         type: string
       spec_path:
@@ -23,7 +23,7 @@ on:
         required: true
         type: string
       pkg:
-        description: 'SDK package name (must be "search")'
+        description: 'SDK package name'
         required: false
         type: string
       server:
@@ -40,8 +40,8 @@ on:
         type: string
 
 # Payload/input fields:
-#   service      (required) — must be "search-service"
-#   pkg          (optional) — must be "search" when provided
+#   service      (required) — service name used for the generated spec path
+#   pkg          (optional) — SDK package name, defaults to "search"
 #   server       (optional) — hostname for getBaseURL(), defaults to <pkg>-service
 #   strip_prefix (optional) — gateway path prefix stripped in standalone New() (e.g. /sport-data/v3)
 #   spec_repo    (required) — org/repo of the service
@@ -96,16 +96,6 @@ jobs:
         run: |
           PKG="${IN_PKG:-search}"
           SERVICE="${SERVICE:-search-service}"
-
-          if [ "$SERVICE" != "search-service" ]; then
-            echo "This repository only supports generating the search service. Received SERVICE='$SERVICE'."
-            exit 1
-          fi
-
-          if [ "$PKG" != "search" ]; then
-            echo "This repository only supports PKG='search'. Received PKG='$PKG'."
-            exit 1
-          fi
 
           echo "SERVICE=$SERVICE" >> "$GITHUB_ENV"
           echo "PKG=$PKG" >> "$GITHUB_ENV"
