@@ -1,0 +1,115 @@
+---
+version: '3'
+
+vars:
+  DOCKER: '{{.DOCKER | default "docker"}}'
+  GECKO_TOOLS: '{{.GECKO_TOOLS | default "ghcr.io/nentgroup/gecko-tools:edge"}}'
+
+tasks:
+  default:
+    desc: Build generated SDK
+    cmds:
+      - task: build
+
+  clean:
+    desc: Remove build artifacts and generated SDK output
+    cmds:
+      - rm -rf dist src/index.ts src/sdk.ts src/service
+
+  generate:
+    desc: Generate one TypeScript service SDK from an OpenAPI spec
+    vars:
+      SERVICE: '{{.SERVICE | default "search-service"}}'
+      PKG: '{{.PKG | default "search"}}'
+      SPEC: '{{.SPEC | default (printf "api/%s.yml" .SERVICE)}}'
+      SERVER: '{{.SERVER | default ""}}'
+      STRIP_PREFIX: '{{.STRIP_PREFIX | default ""}}'
+      IGNORE: '{{.IGNORE | default ""}}'
+      DOCS_OUT: '{{.DOCS_OUT | default ""}}'
+    cmds:
+      - >-
+        {{.DOCKER}} run --rm
+        -v "$PWD:/workspace"
+        -w /workspace
+        {{.GECKO_TOOLS}}
+        sdkgen
+        -lang typescript
+        -spec {{.SPEC}}
+        -out src/service/{{.PKG}}
+        -pkg {{.PKG}}
+        {{if .SERVER}}-server {{.SERVER}}{{end}}
+        {{if .STRIP_PREFIX}}-strip-prefix "{{.STRIP_PREFIX}}"{{end}}
+        -ignore "{{.IGNORE}}"
+        {{if .DOCS_OUT}}-docs-out {{.DOCS_OUT}}{{end}}
+      - task: generate:sdk
+
+  generate:sdk:
+    desc: Regenerate top-level sdk.ts from src/service/* directories
+    cmds:
+      - >-
+        {{.DOCKER}} run --rm
+        -v "$PWD:/workspace"
+        -w /workspace
+        {{.GECKO_TOOLS}}
+        sdkgen
+        -lang typescript
+        -sdk
+        -sdk-root src
+        -sdk-services-root src/service
+
+  generate:all:
+    desc: Regenerate search TypeScript SDK, docs, and unified sdk.ts
+    cmds:
+      - rm -rf src/service src/sdk.ts src/index.ts docs/services docs/api
+      - task: generate
+        vars:
+          SERVICE: search-service
+          PKG: search
+          SPEC: api/search-service.yml
+          DOCS_OUT: docs/services
+      - task: generate:sdk
+      - task: generate:docs:sidebar
+
+  generate:docs:sidebar:
+    desc: Refresh docs sidebar/navigation from generated docs/services and api specs
+    cmds:
+      - mkdir -p docs/api && cp api/*.yml docs/api/
+      - >-
+        {{.DOCKER}} run --rm
+        -v "$PWD:/workspace"
+        -w /workspace
+        {{.GECKO_TOOLS}}
+        sdkgen
+        -docs-sidebar
+
+  build:
+    desc: Compile TypeScript output
+    cmds:
+      - npx tsc -p tsconfig.json --noCheck
+
+  test:
+    desc: Run smoke tests
+    cmds:
+      - task: build
+      - node --test test/*.test.cjs
+
+  ci:
+    desc: Clean, build, and test
+    cmds:
+      - task: clean
+      - npm ci
+      - task: test
+
+  setup:tools:
+    desc: Install and configure development tools (lefthook, commitlint, golangci-lint, Task)
+    cmds:
+      - chmod +x scripts/setup.sh
+      - ./scripts/setup.sh
+      - echo "✅ Tools installed"
+
+  setup:
+    desc: Setup everything needed for development
+    deps:
+      - setup:tools
+    cmds:
+      - echo "✅ Development environment ready"

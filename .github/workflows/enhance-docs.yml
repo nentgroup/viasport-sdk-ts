@@ -1,0 +1,97 @@
+---
+name: enhance-docs
+
+on:
+  pull_request:
+    types: [opened]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to enhance docs on'
+        required: true
+      pkg:
+        description: 'Package name (search)'
+        required: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  enhance:
+    name: Request Copilot doc enhancement
+    runs-on: ubuntu-latest
+    # Use branch name, not labels. create-pull-request adds labels AFTER
+    # creating the PR via separate API calls, so the 'opened' event has no
+    # labels yet — and 'labeled' fires once per label (multiple comments).
+    # The branch name 'chore/regenerate-<pkg>' is set at creation and is reliable.
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      startsWith(github.head_ref, 'chore/regenerate-')
+
+    steps:
+      - name: Resolve PR number and package
+        id: ctx
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          HEAD_REF: ${{ github.head_ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          INPUT_PR: ${{ github.event.inputs.pr_number }}
+          INPUT_PKG: ${{ github.event.inputs.pkg }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            {
+              echo "pr_number=${INPUT_PR}"
+              echo "pkg=${INPUT_PKG}"
+            } >> "$GITHUB_OUTPUT"
+          else
+            PKG="${HEAD_REF#chore/regenerate-}"
+            {
+              echo "pr_number=${PR_NUMBER}"
+              echo "pkg=${PKG}"
+            } >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate target PR is a regeneration PR
+        id: guard
+        env:
+          GH_TOKEN: ${{ secrets.SVN_SDK_DISPATCHER_TOKEN || github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.ctx.outputs.pr_number }}
+          PKG: ${{ steps.ctx.outputs.pkg }}
+        run: |
+          HEAD_REF=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}" --jq '.head.ref')
+          if [[ "$HEAD_REF" != chore/regenerate-* ]]; then
+            echo "should_comment=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping: PR #${PR_NUMBER} head ref '${HEAD_REF}' is not a regeneration branch."
+            exit 0
+          fi
+
+          # Prefer deriving package from branch to avoid mismatched manual input.
+          DERIVED_PKG="${HEAD_REF#chore/regenerate-}"
+          if [ -n "$DERIVED_PKG" ]; then
+            PKG="$DERIVED_PKG"
+          fi
+
+          echo "should_comment=true" >> "$GITHUB_OUTPUT"
+          echo "pkg=${PKG}" >> "$GITHUB_OUTPUT"
+
+      # Checkout is required to read .github/copilot-instructions.md
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Post Copilot enhancement request
+        if: ${{ steps.guard.outputs.should_comment == 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.SVN_SDK_DISPATCHER_TOKEN || github.token }} # PAT preferred; fallback keeps workflow operational
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.ctx.outputs.pr_number }}
+          PKG: ${{ steps.guard.outputs.pkg }}
+        run: |
+          TEMPLATE=".github/prompts/enhance-docs.md"
+          sed "s/{{PKG}}/${PKG}/g" "${TEMPLATE}" > /tmp/copilot-comment.md
+
+          gh pr comment "${PR_NUMBER}" \
+            --repo "${REPO}" \
+            --body-file /tmp/copilot-comment.md

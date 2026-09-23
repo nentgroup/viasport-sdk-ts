@@ -1,0 +1,204 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <!-- BEGIN GENERATED SDK HTML TITLE -->
+    <title>Viasport API Reference — SVN SDK for TypeScript v1.30.5</title>
+<!-- END GENERATED SDK HTML TITLE -->
+    <link rel="icon" type="image/svg+xml" href="./viaplay_logo.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <style>
+        /* Laserwave palette — matches the Scalar `laserwave` theme */
+        :root {
+            color-scheme: dark;
+
+            --bar-bg: #27212e;
+            --bar-bg-2: #2e2838;
+            --bar-fg: #ffffff;
+            --bar-border: #423747;
+
+            --accent-glow: rgba(235, 100, 185, 0.35);
+            --accent-color: #eb64b9;
+        }
+
+        html, body {
+            background: var(--bar-bg);
+            margin: 0;
+        }
+
+        body {
+            font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+            Roboto, sans-serif;
+            color: var(--bar-fg);
+        }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            padding: 10px 18px;
+            background: linear-gradient(
+                    180deg,
+                    var(--bar-bg) 0%,
+                    var(--bar-bg-2) 100%
+            );
+            border-bottom: 1px solid var(--bar-border);
+            box-shadow: 0 1px 0 rgba(235, 100, 185, 0.12);
+            backdrop-filter: saturate(180%) blur(8px);
+        }
+
+        .topbar__brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .topbar__logo {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 10px var(--accent-glow));
+        }
+
+        .topbar__title {
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            white-space: nowrap;
+            background: linear-gradient(90deg, #ffffff 0%, var(--accent-color) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+        }
+
+        .topbar__spacer {
+            flex: 1;
+        }
+
+        .topbar__back {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.6);
+            text-decoration: none;
+            padding: 5px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--bar-border);
+            transition: color 0.15s, border-color 0.15s;
+            white-space: nowrap;
+        }
+
+        .topbar__back:hover {
+            color: rgba(255, 255, 255, 0.9);
+            border-color: var(--accent-color);
+        }
+
+        .topbar__back svg {
+            width: 14px;
+            height: 14px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+    </style>
+</head>
+
+<body>
+<div class="topbar">
+    <a class="topbar__brand" href="./" aria-label="SVN SDK for TypeScript">
+        <img class="topbar__logo" src="./viaplay_logo.svg" alt="" />
+        <!-- BEGIN GENERATED SDK API REF TITLE -->
+        <span class="topbar__title">Viasport API Reference v1.30.5</span>
+        <!-- END GENERATED SDK API REF TITLE -->
+    </a>
+    <div class="topbar__spacer"></div>
+    <a class="topbar__back" href="./">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+        SDK Docs
+    </a>
+</div>
+
+<div id="app">
+    <div id="scalar-loading" style="
+        display:flex; align-items:center; justify-content:center;
+        height:60vh; color:rgba(255,255,255,0.4); font-size:14px;
+        flex-direction:column; gap:12px;">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
+             stroke="rgba(235,100,185,0.6)" stroke-width="1.5"
+             stroke-linecap="round" stroke-linejoin="round"
+             style="animation:spin 1s linear infinite">
+            <circle cx="12" cy="12" r="10" stroke-dasharray="31.4" stroke-dashoffset="10"/>
+        </svg>
+        Loading API Reference…
+        <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+    </div>
+</div>
+
+<!-- Scalar API Reference — explicit browser bundle, pinned -->
+<script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.69.0/dist/browser/standalone.js"></script>
+
+<script>
+    document.getElementById('scalar-loading').remove()
+
+    Scalar.createApiReference('#app', {
+        // Multiple specs — each renders as a selectable entry in the sidebar
+        // BEGIN GENERATED SOURCES
+        sources: [
+            {
+                url: './api/auth-service.yml',
+                title: 'Auth',
+                slug: 'auth',
+            },
+            {
+                url: './api/service-catalog.yml',
+                title: 'Catalog',
+                slug: 'catalog',
+            },
+            {
+                url: './api/content-service.yml',
+                title: 'Content',
+                slug: 'content',
+            },
+            {
+                url: './api/search-service.yml',
+                title: 'Search',
+                slug: 'search',
+            },
+            {
+                url: './api/search.yml',
+                title: 'Search',
+                slug: 'search',
+            },
+            {
+                url: './api/taxonomy-service.yml',
+                title: 'Taxonomy',
+                slug: 'taxonomy',
+            },
+        ],
+        // END GENERATED SOURCES
+
+        layout: 'modern',
+        theme: 'laserwave',
+
+        showSidebar: true,
+
+        // Open Bearer auth scheme by default in Scalar's sidebar auth panel
+        authentication: {
+            preferredSecurityScheme: 'BearerAuth',
+        },
+    })
+</script>
+</body>
+</html>
+

@@ -1,0 +1,47 @@
+---
+# For more configuration options, see: https://lefthook.dev/configuration/
+
+pre-commit:
+  parallel: true
+  jobs:
+    - name: eslint
+      priority: 1
+      glob: '*.{js,cjs,mjs,ts,tsx}'
+      run: npx eslint --fix --color {staged_files}
+
+    - name: prettier
+      priority: 1
+      glob: '*.{js,cjs,mjs,ts,tsx,json,md,yml,yaml}'
+      run: npx prettier --write {staged_files}
+
+    - name: github-actions-lint
+      priority: 1
+      glob: '.github/workflows/*.{yml,yaml}'
+      run: actionlint
+
+    - name: git-add-updated-files
+      priority: 3
+      run: git add -A
+
+pre-push:
+  parallel: false
+  jobs:
+    - name: typecheck
+      run: npm run typecheck
+    - name: test
+      run: npm test
+
+commit-msg:
+  jobs:
+    - name: conventional-commit-lint
+      run: |
+        sed '/^#/d' {1} | head -n1 | grep -Eq '^(feat|fix|chore|docs|refactor|perf|build|ci|test|style|revert)(\([^)]+\))?(!)?: .+'
+      fail_text: |
+        ❌ Invalid commit message format!
+        Please follow Conventional Commits:
+          feat(scope): add feature
+          fix(scope): fix bug
+        Example:
+          feat(auth): add JWT support
+        See https://www.conventionalcommits.org/en/v1.0.0/
+...

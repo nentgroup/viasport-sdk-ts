@@ -1,0 +1,38 @@
+# For most projects, this workflow file will not need changing; you simply need
+# to commit it to your repository in .github/workflows/build-publish-module.yml.
+# The workflow uses the local composite action at ./.github/actions/build-artifact/action.yml
+#
+name: 'Publish NPM package (manual fallback)'
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+  packages: read
+
+jobs:
+  publish:
+    name: Publish package to npmjs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: 'https://registry.npmjs.org'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build package
+        run: npm run build
+
+      - name: Publish package
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public --provenance

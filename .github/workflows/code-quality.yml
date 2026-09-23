@@ -1,0 +1,107 @@
+---
+name: code-quality
+
+on:
+  push:
+    branches:
+      - 'feature/*'
+      - 'bugfix/*'
+      - 'hotfix/*'
+      - 'chore/*'
+      - 'refactor/*'
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+      - develop
+  workflow_call:
+
+jobs:
+  check-changes:
+    name: Check File Changes
+    if: github.event_name != 'workflow_call'
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'api/**'
+              - 'src/**'
+              - 'test/**'
+              - 'tsconfig.json'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'Taskfile.yml'
+              - '.github/workflows/*.yml'
+              - '.github/scripts/**'
+
+  validate-sdk:
+    name: Lint, Typecheck, and Test SDK
+    needs: check-changes
+    if: >-
+      always()
+      && (needs.check-changes.result == 'skipped'
+          || needs.check-changes.outputs.code == 'true')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source Git repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Prettier check
+        run: npm run prettier
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Run tests
+        run: npm test
+
+      - name: Upload build artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdk-dist
+          path: |
+            dist/**
+            docs/services/**
+            docs/_sidebar.md
+          if-no-files-found: ignore
+          retention-days: 7
+
+  lint-commits:
+    name: Lint Commit Messages
+    runs-on: ubuntu-latest
+    env:
+      PR_TITLE: ${{ github.event.pull_request.title }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Lint PR title (for squash merges)
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "$PR_TITLE" | grep -Eq '^(feat|fix|chore|docs|refactor|perf|build|ci|test|style|revert)(\([^)]+\))?(!)?: .+'
+
+      - name: Lint last commit message (for direct pushes)
+        if: github.event_name == 'push'
+        run: |
+          git log -1 --pretty=format:"%s" | grep -Eq '^(feat|fix|chore|docs|refactor|perf|build|ci|test|style|revert)(\([^)]+\))?(!)?: .+'

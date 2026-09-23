@@ -1,0 +1,246 @@
+---
+name: regenerate-client
+
+on:
+  repository_dispatch:
+    types: [regenerate]
+  workflow_dispatch:
+    inputs:
+      spec_repo:
+        description: 'org/repo of the service (e.g. nentgroup/service-catalog)'
+        required: true
+        type: string
+      ref:
+        description: 'Git ref (tag or commit SHA) to fetch the spec at'
+        required: true
+        type: string
+      service:
+        description: 'Service name (search)'
+        required: true
+        type: string
+      spec_path:
+        description: 'Path to the OpenAPI spec in the service repo'
+        required: true
+        type: string
+      pkg:
+        description: 'SDK package name (must be "search")'
+        required: false
+        type: string
+      server:
+        description: 'Hostname for getBaseURL() (defaults to <pkg>-service)'
+        required: false
+        type: string
+      strip_prefix:
+        description: 'Gateway path prefix stripped in standalone New() (e.g. /sport-data/v3)'
+        required: false
+        type: string
+      ignored_paths:
+        description: 'Comma-separated OpenAPI paths to ignore during generation'
+        required: false
+        type: string
+
+# Payload/input fields:
+#   service      (required) — must be "search"
+#   pkg          (optional) — must be "search" when provided
+#   server       (optional) — hostname for getBaseURL(), defaults to <pkg>-service
+#   strip_prefix (optional) — gateway path prefix stripped in standalone New() (e.g. /sport-data/v3)
+#   spec_repo    (required) — org/repo of the service
+#   spec_path    (required) — path to the OpenAPI spec in the service repo
+#   ref          (required) — git ref (commit SHA or tag) to fetch the spec at
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  packages: read
+
+jobs:
+  regenerate:
+    name: Regenerate Service Client
+    runs-on: ubuntu-latest
+    env:
+      GECKO_TOOLS: ghcr.io/nentgroup/gecko-tools:edge
+    steps:
+      - name: Checkout SDK repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Normalize trigger inputs
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            {
+              echo "SERVICE=${{ inputs.service }}"
+              echo "SPEC_REPO=${{ inputs.spec_repo }}"
+              echo "SPEC_PATH=${{ inputs.spec_path }}"
+              echo "SPEC_REF=${{ inputs.ref }}"
+              echo "IN_PKG=${{ inputs.pkg }}"
+              echo "IN_SERVER=${{ inputs.server }}"
+              echo "IN_STRIP_PREFIX=${{ inputs.strip_prefix }}"
+              echo "IN_IGNORED_PATHS=${{ inputs.ignored_paths }}"
+            } >> "$GITHUB_ENV"
+          else
+            {
+              echo "SERVICE=${{ github.event.client_payload.service }}"
+              echo "SPEC_REPO=${{ github.event.client_payload.spec_repo }}"
+              echo "SPEC_PATH=${{ github.event.client_payload.spec_path }}"
+              echo "SPEC_REF=${{ github.event.client_payload.ref }}"
+              echo "IN_PKG=${{ github.event.client_payload.pkg }}"
+              echo "IN_SERVER=${{ github.event.client_payload.server }}"
+              echo "IN_STRIP_PREFIX=${{ github.event.client_payload.strip_prefix }}"
+              echo "IN_IGNORED_PATHS=${{ github.event.client_payload.ignored_paths }}"
+            } >> "$GITHUB_ENV"
+          fi
+
+      - name: Derive package name
+        run: |
+          PKG="${IN_PKG:-search}"
+          SERVICE="${SERVICE:-search}"
+
+          if [ "$SERVICE" != "search" ]; then
+            echo "This repository only supports generating the search service. Received SERVICE='$SERVICE'."
+            exit 1
+          fi
+
+          if [ "$PKG" != "search" ]; then
+            echo "This repository only supports PKG='search'. Received PKG='$PKG'."
+            exit 1
+          fi
+
+          echo "SERVICE=$SERVICE" >> "$GITHUB_ENV"
+          echo "PKG=$PKG" >> "$GITHUB_ENV"
+
+          BASE="$IN_SERVER"
+          if [ -z "$BASE" ]; then
+            BASE="search-service"
+          fi
+          echo "BASE=$BASE" >> "$GITHUB_ENV"
+
+          echo "STRIP_PREFIX=$IN_STRIP_PREFIX" >> "$GITHUB_ENV"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.24'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fetch OpenAPI spec at pinned ref
+        env:
+          GH_TOKEN: ${{ secrets.SVN_SDK_DISPATCHER_TOKEN || github.token }}
+        run: |
+          echo "Fetching spec from ${SPEC_REPO}@${SPEC_REF} at ${SPEC_PATH}"
+          gh api "repos/${SPEC_REPO}/contents/${SPEC_PATH}?ref=${SPEC_REF}" \
+            --jq '.content' | base64 -d > "api/${SERVICE}.yml"
+
+      - name: Derive PR conventional-commit prefix from upstream ref
+        id: pr_meta
+        env:
+          GH_TOKEN: ${{ secrets.SVN_SDK_DISPATCHER_TOKEN || github.token }}
+        run: |
+          bash .github/scripts/derive-regenerate-pr-meta.sh
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run sdkgen (TypeScript client + Markdown docs)
+        env:
+          IGNORED_PATHS: ${{ env.IN_IGNORED_PATHS }}
+        run: |
+          rm -rf "src/service/${PKG}" "docs/services/${PKG}.md" "docs/api/${SERVICE}.yml"
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            -v "$PWD:/workspace" \
+            -w /workspace \
+            "$GECKO_TOOLS" sdkgen \
+            -lang typescript \
+            -spec "api/${SERVICE}.yml" \
+            -out "src/service/${PKG}" \
+            -pkg "${PKG}" \
+            -server "${BASE}" \
+            -strip-prefix "${STRIP_PREFIX}" \
+            -ignore "${IGNORED_PATHS}" \
+            -docs-out docs/services
+
+      - name: Sync spec into docs/api for Scalar API reference
+        run: |
+          mkdir -p docs/api
+          cp "api/${SERVICE}.yml" "docs/api/${SERVICE}.yml"
+
+      - name: Regenerate sdk.ts and docs navigation
+        run: |
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            -v "$PWD:/workspace" \
+            -w /workspace \
+            "$GECKO_TOOLS" sdkgen \
+            -lang typescript \
+            -sdk \
+            -sdk-root src \
+            -sdk-services-root src/service
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            -v "$PWD:/workspace" \
+            -w /workspace \
+            "$GECKO_TOOLS" sdkgen -docs-sidebar
+
+      - name: Stamp docs with SDK version
+        run: |
+          go -C tools run ./stamp-docs-sdk-version
+
+      - name: Validate generated TypeScript SDK
+        run: |
+          npm run typecheck
+          npm test
+
+      - name: Ensure PR labels exist
+        env:
+          GH_TOKEN: ${{ secrets.SVN_SDK_DISPATCHER_TOKEN || github.token }}
+          LABELS_JSON: ${{ steps.pr_meta.outputs.labels_json }}
+          REPO: ${{ github.repository }}
+        run: |
+          bash .github/scripts/ensure-regenerate-pr-labels.sh
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          # Use a PAT (not GITHUB_TOKEN) so the sdk-regeneration label event
+          # is not suppressed and can trigger the enhance-docs workflow.
+          token: ${{ secrets.SVN_SDK_DISPATCHER_TOKEN || github.token }}
+          commit-message: ${{ steps.pr_meta.outputs.pr_commit_message }}
+          labels: ${{ steps.pr_meta.outputs.labels_csv }}
+          title: ${{ steps.pr_meta.outputs.pr_title }}
+          body: |
+            Automated client regeneration triggered by `${{ env.SPEC_REPO }}` at ref `${{ env.SPEC_REF }}`.
+
+            **Upstream commit:** `${{ steps.pr_meta.outputs.upstream_sha }}`
+            **Upstream subject:** `${{ steps.pr_meta.outputs.upstream_subject }}`
+            **Resolved subject:** `${{ steps.pr_meta.outputs.effective_subject }}`
+            **Classification source:** `${{ steps.pr_meta.outputs.classification_source }}`
+
+            **Spec path:** `${{ env.SPEC_PATH }}`
+            **Package:** `${{ env.PKG }}`
+
+            ---
+
+            **Changes in this PR**
+            - 🤖 `src/service/${{ env.PKG }}/*.ts` — regenerated TypeScript client
+            - 🤖 `src/sdk.ts` and `src/index.ts` — regenerated unified SDK entrypoints
+            - 📄 `docs/services/${{ env.PKG }}.md` — regenerated SDK documentation
+            - 📄 `docs/api/${{ env.SERVICE }}.yml` — synchronized OpenAPI spec copy
+            - 📄 `docs/_sidebar.md` — updated sidebar
+
+            > The `enhance-docs` workflow will automatically improve the documentation with AI once this PR is opened.
+          branch: 'chore/regenerate-${{ env.PKG }}'
+          delete-branch: true

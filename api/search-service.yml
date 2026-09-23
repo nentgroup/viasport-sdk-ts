@@ -1,0 +1,1574 @@
+openapi: 3.2.0
+info:
+  title: Viasport Search API Reference
+  version: "v2.3.2"
+  description: |
+    Provides endpoints for discovering content in the Viaplay's sport-clips catalogue.
+    
+    ### HTTP status codes
+    
+    | Code               | Summary                                                                        |
+    |--------------------|--------------------------------------------------------------------------------|
+    | 200                | OK - Everything worked as expected.                                            |
+    | 400                | Bad Request - The request was unacceptable, often due to a malformed body.     |
+    | 401                | Unauthorized - The resource requires an authenticated request.                 |
+    | 403                | Forbidden - The user does not have enough permissions to access this resource. |
+    | 404                | Not Found - The resource could not be found.                                   |
+    | 422                | Unprocessable Entity - Indicates a validation error.                           |
+    | 500, 502, 503, 504 | Server Errors - Something went wrong on the server's end. (These are rare.)    |
+    
+    #### Error codes
+    
+    | Error Code                 | Description                                      |
+    |----------------------------|--------------------------------------------------|
+    | `authentication_required`  | The request is missing the authorization header  |
+    | `invalid_request`          | Most probably the request body is malformed      |
+    | `resource_not_found`       | The requested resource does not exist.           |
+    | `validation_failed`        | One or more fields failed validation.            |
+    | `insufficient_permissions` | The user does not have the required permissions. |
+    
+    ### Migration Guide
+    
+    This guide covers the breaking changes introduced in the new API and how to update your integration accordingly.
+    
+    ---
+    
+    #### Date format: milliseconds → RFC 3339
+    
+    All timestamp fields have been moved from Unix milliseconds to [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) strings.
+    
+    | Legacy field                     | New field        | Example (new)                      |
+    |----------------------------------|------------------|------------------------------------|
+    | `data.createdTimestamp`          | `data.createdAt` | `"2026-05-11T18:06:35Z"`           |
+    | `data.updatedTimestamp`          | `data.updatedAt` | `"2026-05-11T18:06:35Z"`           |
+    | `data.settings.publishTimestamp` | `data.publishAt` | `"2026-06-01T10:00:00Z"` or `null` |
+    
+    The `createdFrom`, `createdTo`, `modifiedFrom`, and `modifiedTo` query parameters also accept RFC 3339 strings (or calendar dates in `YYYY-MM-DD` format) instead of millisecond timestamps.
+    
+    ---
+    
+    #### ISO language code corrections
+    
+    The legacy API has a known bug using `se` and `dk` as language codes. These have been replaced with the correct ISO 639-1 codes:
+    
+    | Legacy (incorrect) | New (correct) |
+    |--------------------|---------------|
+    | `se`               | `sv`          |
+    | `dk`               | `da`          |
+    
+    This affects the `language` field in article responses and the `language` query parameter. Clients that were matching on `se` or `dk` must update to `sv` and `da` respectively.
+    It also affects the taxonomy translation keys. For example, `data.tags.sports[].se.name` is now `data.tags.sport.sports[].translations.sv`.
+    
+    ---
+    
+    #### New required parameters: `contentType` and `country`
+    
+    Two parameters are now **required** on every search request and have no direct legacy equivalent:
+    
+    | Parameter     | Values                              | Purpose                                      |
+    |---------------|-------------------------------------|----------------------------------------------|
+    | `contentType` | `sports`, `entertainment`           | Selects which content catalogue to search    |
+    | `country`     | `se`, `no`, `fi`, `dk`, `nl`        | Scopes results to a specific market          |
+    
+    ```
+    # New — both required
+    GET /search?contentType=sports&country=se&...
+    ```
+    
+    ---
+    
+    #### Query parameter: `content` → `tag=content:<value>`
+    
+    The legacy `content` parameter filtered by content format (e.g. `video`, `text`, `pictures`). It has been unified into the repeatable `tag` filter:
+    
+    ```
+    # Legacy
+    GET /search?content=video&...
+    
+    # New
+    GET /search?tag=content:video&...
+    ```
+    
+    ---
+    
+    #### Taxonomy filters: dedicated params → `tag` key-value pairs
+    
+    Sport-specific filters (`sport`, `competition`, `videoCategory`) and the content-format filter (`content`) have been replaced by a repeatable `tag` parameter that accepts `kind:value` pairs. Multiple values for the same kind are OR-ed; different kinds are AND-ed.
+    
+    | Legacy parameter               | New `tag` equivalent               |
+    |--------------------------------|------------------------------------|
+    | `sport=football`               | `tag=sport:football`               |
+    | `competition=Champions+League` | `tag=competition:champions-league` |
+    | `videoCategory=highlight`      | `tag=videoType:highlight`          |
+    | `content=video`                | `tag=content:video`                |
+    
+    Example:
+    
+    ```
+    GET /search?contentType=sports&country=se&tag=sport:football&tag=competition:champions-league
+    ```
+    
+    New filter capabilities not present in the legacy API:
+    
+    - `tag=team:<id>` — filter by team
+    
+    - `tag=participant:<id>` — filter by participant
+    
+    - `author=<email>` — filter by author email (repeatable, OR-ed, case-insensitive)
+    
+    - `language=<iso-code>` — filter by article language (`sv`, `da`, `fi`, `nl`, `no`)
+    
+    - `title=<substring>` — filter by title substring
+    
+    ---
+    
+    #### Pagination: offset → cursor
+    
+    The `offset` parameter has been removed in favour of opaque cursor-based pagination.
+    
+    | Legacy        | New                                       |
+    |---------------|-------------------------------------------|
+    | `offset=20`   | `cursor=<token from previous response>`   |
+    
+    To paginate, read `links.next.href` from the response and pass its `cursor` query parameter value unchanged in the following request. Do not construct or modify cursor tokens.
+    
+    The `limit` parameter remains, with a maximum value of `200`.
+    
+    ---
+    
+    #### Sort field names
+    
+    Sortable field names have changed to match the new response schema. The format remains `field[:asc|desc]`, defaulting to `createdAt:desc`.
+    
+    | Legacy sort value | New sort value  |
+    |-------------------|-----------------|
+    | *(implicit)*      | `createdAt`     |
+    | *(implicit)*      | `updatedAt`     |
+    | *(implicit)*      | `publishAt`     |
+    | *(not available)* | `title`         |
+    | *(not available)* | `slug`          |
+    | *(not available)* | `contentType`   |
+    | *(not available)* | `language`      |
+    
+    ---
+    
+    #### Article response structure
+    
+    The response shape has been significantly flattened. The `embedded` envelope has been removed; authors and videos are now inlined directly under `data`.
+    
+    **Top-level field mapping**
+    
+    | Legacy path                        | New path                    | Notes                                      |
+    |------------------------------------|-----------------------------|--------------------------------------------|
+    | `data.settings.language`           | `data.language`             |                                            |
+    | `data.settings.publishTimestamp`   | `data.publishAt`            | RFC 3339 or `null`                         |
+    | `data.settings.publishState`       | *(removed)*                 | No equivalent in new API                   |
+    | `data.settings.autoPlayFirstVideo` | *(removed)*                 | No equivalent in new API                   |
+    | `data.createdTimestamp`            | `data.createdAt`            | RFC 3339                                   |
+    | `data.updatedTimestamp`            | `data.updatedAt`            | RFC 3339                                   |
+    | `data.text.body`                   | `data.text`                 | Unwrapped to a plain string                |
+    | `data.preamble`                    | `data.preamble`             | Unchanged                                  |
+    | `data.tags.regions`                | `data.availabilityRegions`  | Moved out of `tags`                        |
+    | `data.factBoxWidgets`              | *(removed)*                 |                                            |
+    | `data.socialWidgets`               | *(removed)*                 |                                            |
+    | `data.sportStatWidgets`            | *(removed)*                 |                                            |
+    | `embedded.authors[].data`          | `data.authors[]`            | Flattened; `links.picture` removed         |
+    | `embedded.videos[]`                | `data.videos[]`             | See video structure below                  |
+    | `embedded.relatedArticles`         | *(removed)*                 |                                            |
+    | `embedded.polls`                   | *(removed)*                 |                                            |
+    | `embedded.pictures`                | *(removed)*                 |                                            |
+    | `links.post`                       | *(removed)*                 |                                            |
+    | `links.videoEmbed`                 | `data.embedUrl`             | Moved into the data body; see below        |
+    | `links.related`                    | *(removed)*                 |                                            |
+    
+    **Tags structure**
+    
+    Sport-specific tags are now nested under `data.tags.sport`, and taxonomy entities expose a structured `translations` map (keyed by correct ISO language codes) plus an `optaId` field instead of per-language top-level keys with a `slug`.
+    
+    ```
+    # Legacy
+    data.tags.sports[].se.name  →  New: data.tags.sport.sports[].translations.sv
+    data.tags.teams[].dk.name   →  New: data.tags.sport.teams[].translations.da
+    ```
+    
+    **Video structure**
+    
+    Videos have moved from `embedded.videos[]` to `data.videos[]`. Each video now exposes orientation variants as named 
+    keys (`horizontal`, `vertical`). Only the orientations that have an available asset are present.
+    
+    ```
+    # Legacy
+    embedded.videos[0].data.mediaGuid            →  data.videos[0].horizontal.mediaGuid
+    embedded.videos[0].data.posterUrl            →  (removed; use posterUrls instead)
+    embedded.videos[0].data.posterUrls.small     →  data.videos[0].horizontal.posterUrls.small
+    ```
+    
+    Each video also carries a top-level `id` (ULID). The `orientation` field is no longer included inside each variant object — the key name already conveys it.
+    
+    **Embed URL**
+    
+    The legacy `links.videoEmbed.href` has been replaced by `data.embedUrl`, a pre-built player URL scoped to the requesting partner:
+    
+    ```
+    # Legacy
+    links.videoEmbed.href  →  "https://embed.viaplay.com/sport/<articleID>"
+    
+    # New
+    data.embedUrl          →  "https://embed.viaplay.com/sport/<articleID>?partnerId=<partnerId>&showtitle=false&postplay=off"
+    ```
+    
+    The new URL includes partner scoping and sensible player defaults (`showtitle=false`, `postplay=off`) out of the box.
+    
+    ---
+    
+    #### Before / After examples
+    
+    **Legacy search request**
+    
+    ```
+    GET /search?q=Jens+Stage
+      &sport=football
+      &competition=champions-league
+      &videoCategory=highlight
+      &content=video
+      &limit=20
+      &offset=20
+      &sort=createdAt
+      &createdFrom=1704067200000
+      &createdTo=1706745600000
+      &exclude=id:863219a3-0a50-4c26-89dc-4834b62be3f1
+    ```
+    
+    **New search request**
+    
+    ```
+    GET /search?q=Jens+Stage
+      &contentType=sports
+      &country=se
+      &tag=sport:football
+      &tag=competition:champions-league
+      &tag=videoType:highlight
+      &tag=content:video
+      &limit=20
+      &cursor=WzE3MDAwMDAwMDAsImFiYy0xMjMiXQ
+      &sort=createdAt:desc
+      &createdFrom=2024-01-01
+      &createdTo=2024-02-01
+      &publishedFrom=2024-01-01
+      &publishedTo=2024-02-01
+      &exclude=id:863219a3-0a50-4c26-89dc-4834b62be3f1
+    ```
+    
+    Key differences at a glance:
+    
+    - `contentType=sports` + `country=se` are new required parameters with no legacy equivalent
+    
+    - `sport`, `competition`, `videoCategory`, `content` → repeatable `tag=kind:value` pairs
+    
+    - `offset=20` → `cursor=<token>` (opaque, taken from `links.next.href` of the previous response)
+    
+    - `createdFrom=1704067200000` → `createdFrom=2024-01-01` (RFC 3339 or `YYYY-MM-DD`)
+    
+    - `sort=createdAt` → `sort=createdAt:desc` (direction now explicit)
+    
+    - `publishedFrom` / `publishedTo` — new, filter by `publishAt` date range
+    
+    ---
+    
+    **Legacy article response (abbreviated)**
+    
+    ```json
+    {
+      "data": {
+        "settings": { "language": "da", "publishTimestamp": 0 },
+        "createdTimestamp": 1778522795000,
+        "updatedTimestamp": 1778522795000,
+        "text": { "body": "Men lørdag kunne Joakim Mæhle..." },
+        "tags": {
+          "regions": ["dk", "se", "no"],
+          "sports": [{ "id": "football", "se": { "name": "Football" } }]
+        }
+      },
+      "embedded": {
+        "authors": [{ "data": { "email": "editor@example.com", "name": "Jane Doe" } }],
+        "videos": [{ "data": { "mediaGuid": "4rxTeMBE8rjk9XVG06AqwrCtYYFRwaCy", "posterUrls": { "small": "..." } } }]
+      },
+      "links": {
+        "self": {},
+        "videoEmbed": { "href": "https://embed.viaplay.com/sport/82c374c8-5e3c-4ac1-8d20-93695b3375c0" }
+      }
+    }
+    ```
+    
+    **New article response (abbreviated)**
+    
+    ```json
+    {
+      "data": {
+        "language": "da",
+        "createdAt": "2026-05-11T18:06:35Z",
+        "updatedAt": null,
+        "publishedAt": "2026-05-12T18:06:35Z",
+        "text": "Men lørdag kunne Joakim Mæhle...",
+        "availabilityRegions": ["dk", "se", "no"],
+        "embedUrl": "https://embed.viaplay.com/sport/82c374c8-5e3c-4ac1-8d20-93695b3375c0?partnerId=abc123&showtitle=false&postplay=off",
+        "tags": {
+          "sport": {
+            "sports": [{ "id": "football", "translations": { "sv": "Football", "da": "Fodbold" }, "optaId": "34oqloyzlx0btgmhmzc4d8frl" }]
+          }
+        },
+        "authors": [{ "email": "editor@example.com", "name": "Jane Doe" }],
+        "videos": [{
+          "id": "01KRC3GB2E2CTM8XJB6VWCD4GF",
+          "horizontal": { "mediaGuid": "4rxTeMBE8rjk9XVG06AqwrCtYYFRwaCy", "posterUrls": { "small": "..." } },
+          "vertical": { "mediaGuid": "9abCDeFGhiJK1LMN23OPqrStUV", "posterUrls": { "small": "..." } }
+        }]
+      },
+      "links": { "self": { "href": "/search/articles/82c374c8-5e3c-4ac1-8d20-93695b3375c0" } }
+    }
+    ```
+jsonSchemaDialect: "https://spec.openapis.org/oas/3.1/dialect/base"
+servers:
+  - url: "https://viasport.mtg-api.com"
+    description: production server
+security:
+  - BearerAuth: []
+tags:
+  - name: Authentication
+    description: |
+      Base path: `/identity`.
+      
+      The Identity API issues and manages JSON Web Tokens used to authenticate requests across all services.
+  - name: Articles
+    description: |
+      Endpoints for searching and retrieving Viasport articles.
+      Base path: `/search`.
+      
+      All endpoints in this group require authentication.
+paths:
+  /identity/auth/access-keys:
+    post:
+      tags:
+        - Authentication
+      summary: Create Access Key
+      description: |
+        You can create access keys to authenticate API requests without using your email and password.
+        This is useful for integrating with third-party services or automating tasks. Each access key is associated with a user and has the same permissions as that user.
+      operationId: Create Access Key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                description:
+                  type: string
+                  description: Description of the access key.
+                  example: Used for integration with service X
+                name:
+                  type: string
+                  description: Name of the access key.
+                  example: My Access Key
+              required:
+                - name
+            example:
+              description: Used for integration with service X
+              name: My Access Key
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      createdAt:
+                        type: string
+                        format: date-time
+                        description: Creation timestamp in ISO 8601 format.
+                        example: "2024-01-01T12:00:00Z"
+                      description:
+                        type: string
+                        description: Description of the access key.
+                        example: Used for integration with service X
+                      key:
+                        type: string
+                        format: uuid
+                        description: ID of the access key.
+                        example: 123e4567-e89b-12d3-a456-426614174000
+                      name:
+                        type: string
+                        description: Name of the access key.
+                        example: My Access Key
+                      token:
+                        type: string
+                        description: The access key token. This is the only time the token will be returned; store it securely.
+                        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+                      userId:
+                        type: string
+                        format: uuid
+                        description: ID of the user who owns the access key.
+                        example: 123e4567-e89b-12d3-a456-426614174000
+                    required:
+                      - key
+                      - name
+                      - createdAt
+                      - userId
+                      - token
+                  links:
+                    type: object
+                    properties:
+                      self:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                            example: /auth/access-key
+              example:
+                data:
+                  createdAt: "2024-01-01T12:00:00Z"
+                  description: Used for integration with service X
+                  key: 123e4567-e89b-12d3-a456-426614174000
+                  name: My Access Key
+                  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+                  userId: 123e4567-e89b-12d3-a456-426614174000
+                links:
+                  self:
+                    href: /auth/access-key
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrBadRequest"
+              example:
+                error:
+                  errCode: invalid_request
+                  message: The request body or query parameters seem to be malformed
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrUserAuthenticationFailed"
+              example:
+                count: 1
+                errCode: user_authentication_failed
+                message: The user or password are not valid
+                statusCode: 401
+        "500":
+          description: Internal Server Error
+  /identity/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login with email and password
+      operationId: Login with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User email.
+                  example: "fabrizio.romano@viaplaygroup.com"
+                password:
+                  type: string
+                  description: User password.
+                  example: "nOkadWias906KdlOw!"
+              required:
+                - email
+                - password
+            example:
+              email: "fabrizio.romano@viaplaygroup.com"
+              password: "nOkadWias906KdlOw!"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/AuthenticationResponse"
+                    description: object containing resource information
+                  links:
+                    type: object
+                    properties:
+                      self:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                            example: /auth/login
+              example:
+                data:
+                  accessToken: ARmBwHc14lo7Mxnin9UADcfJi5AnXbI7zANVpEfUQRmkvR6gCQxNKE7qBM5cpytnW1BU6IepZ8mAVMxoiJSDBjncASqhTkrJ0Usi_HZ231wTOvQrIj1MBdJvrsAyuBw0Anecn0bpLYemtFiUWfRgegGE6pigrpjdyaK5TkCxxINP9FRe
+                  accessTokenExpiryEpochSeconds: 1710327485
+                  refreshToken: ASoJevAkFSYtqLxr4P7gan3l8KiAKbKBtTiXH7xKlp2Wu1O5T1AKeQI5HUMDvlWl_nx1oT_L_LgPHeYxcJx_4h_wAKvWVO_Qs9Gq3GRnp34IIl-Q-Cc4BLxVGfjNVlGnn3vcnkxsvOsLQwfhw9A130uCiiH2Lpl9JN1dAYC1MRZESxzb
+                links:
+                  self:
+                    href: /auth/login
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrBadRequest"
+              example:
+                error:
+                  errCode: invalid_request
+                  message: The request body or query parameters seem to be malformed
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrUserAuthenticationFailed"
+              example:
+                count: 1
+                errCode: user_authentication_failed
+                message: The user or password are not valid
+                statusCode: 401
+        "500":
+          description: Internal Server Error
+  /search/articles:
+    get:
+      tags:
+        - Articles
+      summary: Search
+      description: |
+        Search and list articles. Returns a HAL collection.
+        
+        Set `limit` to the desired page size and follow `links.next.href` to walk
+        the rest of the result set. The link carries a `cursor` token that the
+        service uses to continue exactly where the previous page ended; pass it
+        through unchanged. The `next` link is omitted on the last page.
+        
+        Use `?tag=kind:value` (repeatable) to filter by taxonomy. Multiple values
+        for the same kind are OR-ed; different kinds are AND-ed:
+        
+        ```
+        ?tag=team:real-madrid&tag=team:fc-barcelona     → Real Madrid OR FC Barcelona
+        ?tag=sport:football&tag=team:real-madrid        → football AND Real Madrid
+        ```
+      operationId: Search
+      parameters:
+        - name: q
+          in: query
+          description: "Free-text search across title, text, and tags"
+          schema:
+            type: string
+            example: Jens Stage
+        - name: contentType
+          in: query
+          description: "One of: `sports`, `entertainment`"
+          required: true
+          schema:
+            type: string
+            enum:
+              - entertainment
+              - sports
+        - name: country
+          in: query
+          description: "One of: `se`, `no`, `fi`, `dk`, `nl`"
+          required: true
+          schema:
+            type: string
+            enum:
+              - se
+              - "no"
+              - fi
+              - dk
+              - nl
+        - name: title
+          in: query
+          description: Filter by title substring
+          schema:
+            type: string
+            pattern: "^[^\\x00-\\x1F\\x7F]*$"
+            example: Vilde Stage
+        - name: text
+          in: query
+          description: Filter by body text substring
+          schema:
+            type: string
+            example: Werder Bremen
+        - name: exclude
+          in: query
+          description: "Repeatable `kind:value` exclude filter. Supported kinds: `id` (exclude by article UUID)."
+          schema:
+            type: array
+            items:
+              type: string
+              pattern: "^id:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+            example: "id:863219a3-0a50-4c26-89dc-4834b62be3f1"
+        - name: createdFrom
+          in: query
+          description: Lower bound for createdAt. Calendar date (YYYY-MM-DD) or RFC 3339
+          schema:
+            type: string
+            format: date
+            example: 2026-04-01
+        - name: createdTo
+          in: query
+          description: Upper bound for createdAt
+          schema:
+            type: string
+            format: date
+            example: 2026-04-30
+        - name: modifiedFrom
+          in: query
+          description: Lower bound for updatedAt
+          schema:
+            type: string
+            format: date
+            example: 2026-04-01
+        - name: modifiedTo
+          in: query
+          description: Upper bound for updatedAt
+          schema:
+            type: string
+            format: date
+            example: 2026-04-30
+        - name: publishedFrom
+          in: query
+          description: Lower bound for publishAt. Calendar date (YYYY-MM-DD) or RFC 3339
+          schema:
+            type: string
+            format: date
+            example: 2026-04-01
+        - name: publishedTo
+          in: query
+          description: Upper bound for publishAt
+          schema:
+            type: string
+            format: date
+            example: 2026-04-30
+        - name: sort
+          in: query
+          description: "`field[:asc|desc]`. Sortable: `createdAt`, `updatedAt`, `publishedAt`, `title`, `slug`. Defaults to `createdAt:desc`."
+          schema:
+            type: string
+            pattern: "^(createdAt|updatedAt|publishedAt|title|slug)(:(asc|desc))?$"
+            example: "publishedAt:desc"
+        - name: limit
+          in: query
+          description: "Page size, max 200"
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            example: 20
+        - name: cursor
+          in: query
+          description: "Opaque pagination token from a previous response's `links.next.href`. Pass through unchanged."
+          schema:
+            type: string
+            pattern: "^([A-Za-z0-9\\-_]{4})*([A-Za-z0-9\\-_]{2,3})?$"
+            example: WzE3MDAwMDAwMDAsImFiYy0xMjMiXQ
+        - name: tag
+          in: query
+          description: "Repeatable taxonomy filter `kind:value`. Multiple values of the same kind are OR-ed; different kinds are AND-ed."
+          schema:
+            type: array
+            items:
+              type: string
+              pattern: "^(freeText|tagName|content|contents|sport|team|competition|participant|videoType|season|format|episode):.+$"
+            example: "team:real-madrid"
+        - name: author
+          in: query
+          description: "Repeatable. Filter by author email address (OR-ed, case-insensitive)."
+          schema:
+            type: array
+            items:
+              type: string
+              format: email
+            example: "editor@example.com"
+        - name: language
+          in: query
+          description: "ISO language code. One of: `sv`, `da`, `fi`, `nl`, `no`"
+          schema:
+            type: string
+            enum:
+              - sv
+              - da
+              - fi
+              - nl
+              - "no"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/mtg+json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      count:
+                        type: integer
+                        description: Approximate total number of articles matching the query.
+                        example: 6673
+                      limit:
+                        type: integer
+                        description: Page size used for this response.
+                        example: 20
+                      total:
+                        type: integer
+                        description: Number of articles in this page.
+                        example: 20
+                    required:
+                      - count
+                      - total
+                      - limit
+                  embedded:
+                    type: object
+                    properties:
+                      articles:
+                        type: array
+                        description: Collection of HAL-wrapped Article resources.
+                        items:
+                          type: object
+                          properties:
+                            data:
+                              $ref: "#/components/schemas/Article"
+                            links:
+                              type: object
+                              properties:
+                                self:
+                                  type: object
+                                  properties:
+                                    href:
+                                      type: string
+                                      description: URL of this resource.
+                                  required:
+                                    - href
+                              required:
+                                - self
+                          required:
+                            - data
+                            - links
+                    required:
+                      - articles
+                  links:
+                    type: object
+                    properties:
+                      next:
+                        type: object
+                        description: Present when more pages are available.
+                        properties:
+                          href:
+                            type: string
+                            description: "URL of the next page; contains a `cursor` token."
+                            example: "/search/articles?limit=20&cursor=WzE3MDAwMDAwMDAsImFiYy0xMjMiXQ"
+                        required:
+                          - href
+                      self:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                            description: URL of this page.
+                            example: /search/articles?limit=1
+                        required:
+                          - href
+                    required:
+                      - self
+                required:
+                  - data
+                  - links
+                  - embedded
+              example:
+                data:
+                  count: 1247
+                  limit: 1
+                  total: 1
+                embedded:
+                  articles:
+                    - data:
+                        authors:
+                          - email: "redaktion@viasport.dk"
+                            name: Viasport Redaktion
+                        availabilityRegions:
+                          - dk
+                          - se
+                          - "no"
+                        contentType: sports
+                        createdAt: "2026-05-08T19:31:56Z"
+                        embedUrl: "https://embed.viaplay.com/sport/d39aa447-97b0-4c4d-b1f2-cca8aecc64a0?partnerId=6bc6dfac-0487-4ab2-a011-deb41c8431c7&showtitle=false&postplay=off"
+                        id: d39aa447-97b0-4c4d-b1f2-cca8aecc64a0
+                        language: da
+                        preamble: Den danske landsholdsspiller lagde op til kampens eneste mål.
+                        publishedAt: "2026-05-08T19:30:00Z"
+                        slug: joakim-mahle-leverer-perleassist-for-werder-bremen
+                        tags:
+                          contents:
+                            - text
+                            - video
+                          freeTexts:
+                            - mas
+                            - autoplay
+                          sport:
+                            competitions:
+                              - id: bundesliga
+                                optaId: p1bqnks3vt1o0i29zmvk3oyo
+                                translations:
+                                  da: Bundesliga
+                                  "no": Bundesliga
+                                  sv: Bundesliga
+                            participants:
+                              - joakim-mahle
+                            sports:
+                              - id: football
+                                optaId: 34oqloyzlx0btgmhmzc4d8frl
+                                translations:
+                                  da: Fodbold
+                                  fi: Jalkapallo
+                                  "no": Fotball
+                                  sv: Fotboll
+                            teams:
+                              - id: werder-bremen
+                                optaId: 9r8e14n3nzsmxmjq1z98tgeg5
+                                translations:
+                                  da: Werder Bremen
+                                  "no": Werder Bremen
+                                  sv: Werder Bremen
+                            videoTypes:
+                              - highlight
+                        text: "Den tidligere superligaprofil Jens Stage var ikke den eneste dansker, der leverede i weekenden."
+                        title: Joakim Mæhle leverer perleassist for Werder Bremen
+                        updatedAt: "2026-05-08T19:32:52Z"
+                        videos:
+                          - horizontal:
+                              duration: 94.5
+                              format: mp4
+                              mediaGuid: 4rxTeMBE8rjk9XVG06AqwrCtYYFRwaCy
+                              posterUrls:
+                                large: "https://akamai.vgc.no/v2/images/df603706-5f46-3a43-a6c8-7af42317219c?w=1000&h=563"
+                                medium: "https://akamai.vgc.no/v2/images/df603706-5f46-3a43-a6c8-7af42317219c?w=300&h=169"
+                                small: "https://akamai.vgc.no/v2/images/df603706-5f46-3a43-a6c8-7af42317219c?w=100&h=56"
+                            id: 01KR4H6F3STPB2H80RNAKJ5B7D
+                      links:
+                        self:
+                          href: /search/articles/d39aa447-97b0-4c4d-b1f2-cca8aecc64a0
+                links:
+                  next:
+                    href: "/search/articles?contentType=sports&country=dk&cursor=WzE3NzgyNjg3MTYwMDAsImQzOWFhNDQ3LTk3YjAtNGM0ZC1iMWYyLWNjYThhZWNjNjRhMCJd&limit=1"
+                  self:
+                    href: "/search/articles?contentType=sports&country=dk&limit=1"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrBadRequest"
+              example:
+                error:
+                  errCode: invalid_request
+                  message: The request body or query parameters seem to be malformed
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrUnAuthorized"
+              example:
+                error:
+                  errCode: authentication_required
+                  message: This resource requires authentication
+        "422":
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrValidation"
+              example:
+                error:
+                  details:
+                    - {}
+                    - "path: `/fieldName`"
+                    - "code: `invalid_enum_value`"
+                    - "message: `Must be one of: entertainment, sports`"
+                  errCode: validation_failed
+                  message: Validation failed
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrInternal"
+              example:
+                error:
+                  errCode: internal_server_error
+                  message: "Woops! Something went wrong"
+  "/search/articles/{id}":
+    get:
+      tags:
+        - Articles
+      summary: Retrieve an article by id
+      operationId: Retrieve an article by id
+      parameters:
+        - name: id
+          in: path
+          description: Article UUID or slug.
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/mtg+json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Article"
+                  links:
+                    type: object
+                    properties:
+                      self:
+                        type: object
+                        properties:
+                          href:
+                            type: string
+                            description: URL of this resource.
+                            example: "/search/articles/{id}"
+                        required:
+                          - href
+                    required:
+                      - self
+                required:
+                  - data
+                  - links
+              example:
+                data:
+                  authors:
+                    - email: "redaktion@viasport.dk"
+                      name: Viasport Redaktion
+                  availabilityRegions:
+                    - dk
+                    - se
+                    - "no"
+                  contentType: sports
+                  createdAt: "2026-05-08T19:31:56Z"
+                  embedUrl: "https://embed.viaplay.com/sport/d39aa447-97b0-4c4d-b1f2-cca8aecc64a0?partnerId=6bc6dfac-0487-4ab2-a011-deb41c8431c7&showtitle=false&postplay=off"
+                  id: d39aa447-97b0-4c4d-b1f2-cca8aecc64a0
+                  language: da
+                  preamble: Den danske landsholdsspiller lagde op til kampens eneste mål.
+                  publishedAt: "2026-05-08T19:30:00Z"
+                  slug: joakim-mahle-leverer-perleassist-for-werder-bremen
+                  tags:
+                    contents:
+                      - text
+                      - video
+                    freeTexts:
+                      - mas
+                      - autoplay
+                    sport:
+                      competitions:
+                        - id: bundesliga
+                          optaId: p1bqnks3vt1o0i29zmvk3oyo
+                          translations:
+                            da: Bundesliga
+                            "no": Bundesliga
+                            sv: Bundesliga
+                      participants:
+                        - joakim-mahle
+                      sports:
+                        - id: football
+                          optaId: 34oqloyzlx0btgmhmzc4d8frl
+                          translations:
+                            da: Fodbold
+                            fi: Jalkapallo
+                            "no": Fotball
+                            sv: Fotboll
+                      teams:
+                        - id: werder-bremen
+                          optaId: 9r8e14n3nzsmxmjq1z98tgeg5
+                          translations:
+                            da: Werder Bremen
+                            "no": Werder Bremen
+                            sv: Werder Bremen
+                      videoTypes:
+                        - highlight
+                  text: "Den tidligere superligaprofil Jens Stage var ikke den eneste dansker, der leverede i weekenden."
+                  title: Joakim Mæhle leverer perleassist for Werder Bremen
+                  updatedAt: "2026-05-08T19:32:52Z"
+                  videos:
+                    - horizontal:
+                        duration: 94.5
+                        format: mp4
+                        mediaGuid: 4rxTeMBE8rjk9XVG06AqwrCtYYFRwaCy
+                        posterUrls:
+                          large: "https://akamai.vgc.no/v2/images/df603706-5f46-3a43-a6c8-7af42317219c?w=1000&h=563"
+                          medium: "https://akamai.vgc.no/v2/images/df603706-5f46-3a43-a6c8-7af42317219c?w=300&h=169"
+                          small: "https://akamai.vgc.no/v2/images/df603706-5f46-3a43-a6c8-7af42317219c?w=100&h=56"
+                      id: 01KR4H6F3STPB2H80RNAKJ5B7D
+                links:
+                  self:
+                    href: /search/articles/d39aa447-97b0-4c4d-b1f2-cca8aecc64a0
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrUnAuthorized"
+              example:
+                error:
+                  errCode: authentication_required
+                  message: This resource requires authentication
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrNotFound"
+              example:
+                error:
+                  errCode: resource_not_found
+                  message: Resource not found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrInternal"
+              example:
+                error:
+                  errCode: internal_server_error
+                  message: "Woops! Something went wrong"
+components:
+  schemas:
+    Article:
+      type: object
+      description: Article returned in search and retrieval responses.
+      properties:
+        authors:
+          type: array
+          description: Authors credited for this article.
+          items:
+            $ref: "#/components/schemas/Author"
+        availabilityRegions:
+          type: array
+          description: Regions where the article is available
+          items:
+            type: string
+        contentType:
+          type: string
+          description: "One of: `sports`, `entertainment`."
+          enum:
+            - entertainment
+            - sports
+        createdAt:
+          type: string
+          format: date-time
+          description: RFC 3339 UTC datetime when the article was created
+          example: "2026-04-19T07:36:03Z"
+        embedUrl:
+          type: string
+          format: uri
+          description: Viaplay player embed URL for this article
+          example: "https://embed.viaplay.com/sport/863219a3-0a50-4c26-89dc-4834b62be3f1?partnerId=abc&showtitle=false&postplay=off"
+        id:
+          type: string
+          format: uuid
+          description: UUID of the article
+          example: 863219a3-0a50-4c26-89dc-4834b62be3f1
+        language:
+          type: string
+          description: "ISO language code. One of: `sv`, `da`, `fi`, `nl`, `no`"
+          example: da
+        pictures:
+          type: array
+          description: Picture assets attached to this article.
+          items:
+            $ref: "#/components/schemas/Picture"
+        preamble:
+          type: string
+          description: Short lead paragraph shown above the body.
+          example: Werder-profilen leverede en mål-assist-perle.
+        publishedAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+          description: RFC 3339 UTC datetime when the article is/was published
+          example: "2026-04-19T07:36:02Z"
+        shortTitle:
+          type: string
+          description: Short headline for feed/ticker/push surfaces. Falls back to title when absent.
+          example: Stage flyver for Werder
+        slug:
+          type: string
+          description: URL-friendly unique identifier
+          example: vilde-stage-gor-det-onde-ved-hsv
+        tags:
+          $ref: "#/components/schemas/Taxonomy"
+          description: Structured taxonomy tags.
+        text:
+          type: string
+          description: Main body text of the article
+          example: Den tidligere superligaprofil Jens Stage var…
+        title:
+          type: string
+          description: Headline of the article
+          example: Vilde Stage gør det onde ved HSV
+        updatedAt:
+          type: string
+          format: date-time
+          description: RFC 3339 UTC datetime when the article was last updated
+          example: "2026-04-19T07:36:40Z"
+        videos:
+          type: array
+          description: Video assets attached to this article.
+          items:
+            $ref: "#/components/schemas/Video"
+      required:
+        - videos
+        - availabilityRegions
+        - tags
+        - id
+        - contentType
+        - slug
+        - title
+        - text
+        - createdAt
+        - language
+    ArticleCollection:
+      type: object
+      description: "HAL response data fields (from GetMap):"
+    AuthenticationResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: Access token.
+          example: ARmBwHc14lo7Mxnin9UADcfJi5AnXbI7zANVpEfUQRmkvR6gCQxNKE7qBM5cpytnW1BU6IepZ8mAVMxoiJSDBjncASqhTkrJ0Usi_HZ231wTOvQrIj1MBdJvrsAyuBw0Anecn0bpLYemtFiUWfRgegGE6pigrpjdyaK5TkCxxINP9FRe
+        accessTokenExpiryEpochSeconds:
+          type: integer
+          description: Expiry epoch seconds of the access token.
+          example: 1710327485
+        refreshToken:
+          type: string
+          description: Refresh token.
+          example: ASoJevAkFSYtqLxr4P7gan3l8KiAKbKBtTiXH7xKlp2Wu1O5T1AKeQI5HUMDvlWl_nx1oT_L_LgPHeYxcJx_4h_wAKvWVO_Qs9Gq3GRnp34IIl-Q-Cc4BLxVGfjNVlGnn3vcnkxsvOsLQwfhw9A130uCiiH2Lpl9JN1dAYC1MRZESxzb
+      required:
+        - accessToken
+        - accessTokenExpiryEpochSeconds
+        - refreshToken
+    Author:
+      type: object
+      description: list of authors credited for this article.
+      properties:
+        email:
+          type: string
+          format: email
+          description: "author's email address"
+          example: "fabrizio.romano@corriere.it"
+        name:
+          type: string
+          description: "author's full name"
+          example: Fabrizio Romano
+      required:
+        - email
+        - name
+    EntertainmentTags:
+      type: object
+      properties:
+        episode:
+          $ref: "#/components/schemas/TranslationTags"
+          description: Episode info.
+        format:
+          $ref: "#/components/schemas/TranslationTags"
+          description: Show/format info.
+        seasons:
+          type: string
+          description: "Season identifier (a single string, not an array)."
+          example: season-03
+      required:
+        - seasons
+        - episode
+        - format
+    ErrBadRequest:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            errCode:
+              type: string
+              description: Machine-readable error code.
+              example: invalid_request
+            message:
+              type: string
+              description: Human-readable error description.
+              example: The request body or query parameters seem to be malformed
+          required:
+            - errCode
+            - message
+      required:
+        - error
+    ErrForbidden:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            errCode:
+              type: string
+              description: Machine-readable error code.
+              example: authentication_required
+            message:
+              type: string
+              description: Human-readable error description.
+              example: "You don't have enough permissions to access this resource"
+          required:
+            - errCode
+            - message
+      required:
+        - error
+    ErrInternal:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            errCode:
+              type: string
+              description: Machine-readable error code.
+              example: internal_server_error
+            message:
+              type: string
+              description: Human-readable error description.
+              example: "Woops! Something went wrong"
+          required:
+            - errCode
+            - message
+      required:
+        - error
+    ErrNotFound:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            errCode:
+              type: string
+              description: Machine-readable error code.
+              example: resource_not_found
+            message:
+              type: string
+              description: Human-readable error description.
+              example: Resource not found
+          required:
+            - errCode
+            - message
+      required:
+        - error
+    ErrUnAuthorized:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            errCode:
+              type: string
+              description: Machine-readable error code.
+              example: authentication_required
+            message:
+              type: string
+              description: Human-readable error description.
+              example: This resource requires authentication
+          required:
+            - errCode
+            - message
+      required:
+        - error
+    ErrUserAuthenticationFailed:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 1
+        errCode:
+          type: string
+          example: user_authentication_failed
+        message:
+          type: string
+          example: The user or password are not valid
+        statusCode:
+          type: integer
+          example: 401
+      required:
+        - count
+        - errCode
+        - message
+        - statusCode
+    ErrValidation:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            details:
+              type: array
+              description: Per-field validation errors. Present only on 422 responses.
+              items:
+                type: object
+            errCode:
+              type: string
+              description: Machine-readable error code.
+              example: validation_failed
+            message:
+              type: string
+              description: Human-readable error description.
+              example: Validation failed
+          required:
+            - errCode
+            - message
+      required:
+        - error
+    PartnerAvailability:
+      type: object
+      properties:
+        availableFrom:
+          type: string
+        availableTo:
+          type: string
+        partnerId:
+          type: string
+      required:
+        - partnerId
+    Picture:
+      type: object
+      properties:
+        mediaGuid:
+          type: string
+          description: picture media-guid
+          example: 7Xasd9ea0Wsk9wpasdlsd0owlasd0
+        pictureText:
+          type: string
+          description: picture text description of the image
+          example: An example image
+        url:
+          type: string
+          format: uri
+          description: picture URL of the image
+          example: "https://example.com/image.jpg"
+      required:
+        - url
+    Poster:
+      type: object
+      properties:
+        large:
+          type: string
+          format: uri
+          description: large variation of the poster
+          example: "https://example.com/poster_large.jpg"
+        medium:
+          type: string
+          format: uri
+          description: medium variation of the poster
+          example: "https://example.com/poster_medium.jpg"
+        small:
+          type: string
+          format: uri
+          description: small variation of the poster
+          example: "https://example.com/poster_small.jpg"
+      required:
+        - small
+        - medium
+        - large
+    SportTags:
+      type: object
+      properties:
+        competitions:
+          type: array
+          description: Primary competition(s) for the article.
+          items:
+            $ref: "#/components/schemas/TranslationTags"
+        participants:
+          type: string
+          description: "mahle (array[string], required) - Participant IDs or names (free-form strings, not translation objects)."
+          example: joakim
+        sports:
+          type: array
+          description: Primary sport(s) for the article.
+          items:
+            $ref: "#/components/schemas/TranslationTags"
+        teams:
+          type: array
+          description: Teams covered by the article.
+          items:
+            $ref: "#/components/schemas/TranslationTags"
+        videoTypes:
+          type: array
+          description: Types of sport-related videos.
+          items:
+            type: string
+      required:
+        - sports
+        - competitions
+        - teams
+        - videoTypes
+    StatusError:
+      type: object
+      properties:
+        errCode:
+          type: string
+          enum:
+            - authentication_required
+            - resource_not_found
+            - invalid_request
+            - validation_failed
+            - resource_conflict
+            - user_authentication_failed
+            - api_authentication_failed
+            - internal_server_error
+        message:
+          type: string
+      required:
+        - errCode
+        - message
+    Taxonomy:
+      type: object
+      oneOf:
+        - type: object
+          properties:
+            sport:
+              $ref: "#/components/schemas/SportTags"
+              description: "Sport-specific tags. Populated when `contentType` is `sports`; serialised as an empty object otherwise. Branch on `contentType` rather than field presence."
+          required:
+            - sport
+        - type: object
+          properties:
+            entertainment:
+              $ref: "#/components/schemas/EntertainmentTags"
+              description: "Entertainment-specific tags. Omitted from responses when zero-valued; populated only when `contentType` is `entertainment`."
+      properties:
+        contents:
+          type: array
+          description: Content category labels.
+          items:
+            type: string
+        freeTexts:
+          type: array
+          description: Free-text tags. Always present in responses (may be empty).
+          items:
+            type: string
+      required:
+        - freeTexts
+    TranslationTags:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Internal stable ID (slug-like).
+          example: football
+        optaId:
+          type: string
+          description: "External Opta ID, when one was supplied via the legacy `\"opta\"` locale. Opaque upstream identifier — do not assume any particular shape."
+          example: 34oqloyzlx0btgmhmzc4d8frl
+        translations:
+          type: object
+          description: Flat map of ISO 639-1 language code → translated display name. Only languages that have a translation are present as keys.
+          properties:
+            da:
+              type: string
+              description: sample
+              example: Fodbold
+            "no":
+              type: string
+              description: sample
+              example: Fotball
+            sv:
+              type: string
+              description: sample
+              example: Fotboll
+      required:
+        - id
+        - translations
+    ValidationErrMsg:
+      type: object
+      properties:
+        code:
+          type: string
+          enum:
+            - required
+            - invalid_enum_value
+            - invalid_url
+            - invalid_ulid
+            - invalid_uuid
+            - invalid_email
+            - must_match_discriminator
+            - invalid_sort_field
+            - invalid
+        message:
+          type: string
+        path:
+          type: string
+      required:
+        - path
+        - code
+        - message
+    Video:
+      type: object
+      properties:
+        horizontal:
+          description: Horizontal (landscape) video variant. Present only when a horizontal asset is available.
+          oneOf:
+            - $ref: "#/components/schemas/VideoVariant"
+            - type: "null"
+        id:
+          type: string
+          description: "video unique identifier for the logical video,"
+          example: 01F8MECHZX3TBDSZ7XRADM79XE
+        vertical:
+          description: Vertical (portrait) video variant. Present only when a vertical asset is available.
+          oneOf:
+            - $ref: "#/components/schemas/VideoVariant"
+            - type: "null"
+      required:
+        - id
+    VideoVariant:
+      type: object
+      properties:
+        duration:
+          type: number
+          description: video duration in seconds
+          example: 120.5
+        filename:
+          type: string
+          description: video filename
+          example: example_video.mp4
+        format:
+          type: string
+          description: "video format one of `mp4` `webm` `ogg`"
+          example: mp4
+        mediaGuid:
+          type: string
+          description: mpx media-guid
+          example: 4rxTeMBE8rjk9XVG06AqwrCtYYFRwaCy
+        posterUrls:
+          $ref: "#/components/schemas/Poster"
+          description: "video posterUrls object containing URLs for small, medium, and large poster images associated with the video variant"
+      required:
+        - mediaGuid
+  securitySchemes:
+    BearerAuth:
+      type: http
+      description: "Authentication via JWT bearer token. Include the token in the `Authorization` header prefixed with `Bearer `."
+      scheme: bearer
+      bearerFormat: JWT

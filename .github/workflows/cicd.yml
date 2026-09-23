@@ -1,0 +1,82 @@
+---
+name: continuous-delivery
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'feature/*'
+      - 'bugfix/*'
+      - 'hotfix/*'
+
+permissions:
+  id-token: write
+  contents: write
+  pages: write
+  pull-requests: write
+  packages: read
+
+jobs:
+  check-changes:
+    name: Check File Changes
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+      docs: ${{ steps.filter.outputs.docs }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'api/**'
+              - 'src/**'
+              - 'test/**'
+              - 'tsconfig.json'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'Taskfile.yml'
+              - '.github/workflows/*.yml'
+              - '.github/scripts/**'
+            docs:
+              - 'README.md'
+              - 'docs/**'
+
+  run-quality-checks:
+    name: Code Quality Checks
+    needs: check-changes
+    if: ${{ needs.check-changes.outputs.code == 'true' }}
+    uses: ./.github/workflows/code-quality.yml
+    secrets: inherit
+
+  release-please:
+    name: Create or Update Semver Release
+    needs: run-quality-checks
+    if: ${{ always() && github.ref == 'refs/heads/main' && (needs.run-quality-checks.result == 'success' || needs.run-quality-checks.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      prs_created: ${{ steps.release.outputs.prs_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - name: Run release-please
+        id: release
+        uses: googleapis/release-please-action@v5
+        with:
+          token: ${{ secrets.SVN_SDK_DISPATCHER_TOKEN || github.token }}
+          config-file: .github/.release-please-config.json
+          manifest-file: .github/.release-please-manifest.json
+          target-branch: main
+
+      - name: Auto-merge release PR
+        if: ${{ steps.release.outputs.prs_created == 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.SVN_SDK_DISPATCHER_TOKEN || github.token }}
+        run: |
+          PR_NUMBER=$(echo '${{ steps.release.outputs.pr }}' | jq -r '.number')
+          gh pr merge "$PR_NUMBER" \
+            --repo "${{ github.repository }}" \
+            --squash \
+            --auto

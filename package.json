@@ -1,0 +1,51 @@
+{
+  "name": "@viaplay/svn-sdk-ts",
+  "version": "0.1.7",
+  "description": "Generated TypeScript SDK for SVN/Viasport services",
+  "type": "commonjs",
+  "license": "UNLICENSED",
+  "private": false,
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js"
+    },
+    "./sdk": {
+      "types": "./dist/sdk.d.ts",
+      "require": "./dist/sdk.js"
+    },
+    "./service/search": {
+      "types": "./dist/service/search/index.d.ts",
+      "require": "./dist/service/search/index.js"
+    }
+  },
+  "scripts": {
+    "clean": "task clean",
+    "generate": "task generate:all",
+    "build": "tsc -p tsconfig.json --noCheck",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint . --color",
+    "prettier": "prettier --check .",
+    "prettier-fix": "prettier --write .",
+    "test": "npm run build && node --test test/*.test.cjs",
+    "ci": "task ci"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/node": "^24.6.0",
+    "eslint": "^9.34.0",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

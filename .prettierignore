@@ -1,0 +1,16 @@
+dist/*
+bin/*
+build/
+.cache
+public
+node_modules
+*.esm.js
+/.bin
+bin
+docs/**
+api/**
+src/service/**
+src/sdk.ts
+src/index.ts
+Taskfile.yml
+

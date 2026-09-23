@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1.0, shrink-to-fit=no, viewport-fit=cover">
+  <meta name="description" content="SVN SDK for Go — typed clients for all Viaplay SVN services">
+  <!-- BEGIN GENERATED SDK HTML TITLE -->
+  <title>SVN SDK for Go v1.30.5</title>
+<!-- END GENERATED SDK HTML TITLE -->
+
+  <!-- Docsify v5: core theme + dark add-on (always on — laserwave is dark-only) -->
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@5/dist/themes/core.min.css" />
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@5/dist/themes/addons/core-dark.min.css" />
+
+  <!-- Fonts: Inter (UI) + JetBrains Mono (code) — same as Scalar -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=JetBrains+Mono:wght@100..800&display=swap" />
+
+  <style>
+    /* ─── Scalar Laserwave — exact dark mode values ──────────────────────────
+       Source: github.com/scalar/scalar/packages/themes/src/presets/laserwave.css
+    ─────────────────────────────────────────────────────────────────────── */
+    :root {
+      /* Base — background-2 for content, background-1 for sidebar */
+      --color-bg  : #322c39;
+      --color-text: #ffffff;
+      --font-size : 15px;
+      --line-height: 1.7;
+
+      /* Fonts — exact match to Scalar */
+      --font-family     : "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-family-mono: "JetBrains Mono", ui-monospace, Menlo, Monaco, "Cascadia Mono", "Courier New", monospace;
+
+      /* Accent — --scalar-color-accent dark mode */
+      --theme-color: #ed78c2;
+
+      /* Links */
+      --link-color              : ;
+      --link-color-hover        : #ed78c2;
+      --link-underline-color    : transparent;
+      --link-underline-color-hover: #ed78c2;
+
+      /* Sidebar — background-1 (darkest) */
+      --sidebar-bg               : #27212e;
+      --sidebar-border-color     : rgba(255, 255, 255, 0.1);
+      --sidebar-link-color       : #b8b6ba;
+      --sidebar-link-color-active: #ed78c2;
+      --sidebar-group-title-color: #706c74;
+
+      /* Borders */
+      --border-color: rgba(255, 255, 255, 0.1);
+
+      /* Code blocks — background-1 (darkest) for max contrast */
+      --code-bg          : #27212e;
+      --codeblock-bg     : #27212e;
+      /* Syntax colours mapped from Scalar's semantic color names */
+      --codeblock-comment  : #91889b; /* --scalar-color-purple  */
+      --codeblock-function : #ed78c2; /* --scalar-color-accent  */
+      --codeblock-keyword  : #40b4c4; /* --scalar-color-blue    */
+      --codeblock-operator : #74dfc4; /* --scalar-color-green   */
+      --codeblock-property : #40b4c4; /* --scalar-color-blue    */
+      --codeblock-punctuation: #706c74; /* --scalar-color-3      */
+      --codeblock-selector : #b4dce7; /* pale blue — strings    */
+      --codeblock-tag      : #74dfc4; /* --scalar-color-green   */
+      --codeblock-variable : #ffffff; /* --scalar-color-1       */
+
+      /* Blockquote */
+      --blockquote-border-color: #ed78c2;
+      --blockquote-color       : #b8b6ba;
+
+      /* Tables */
+      --table-row-alt-bg: transparent;
+
+      /* Content */
+      --content-max-width: 920px;
+
+      /* Cover page */
+      --cover-bg         : linear-gradient(135deg, #27212e 0%, #4c4059 60%, #27212e 100%);
+      --cover-title-color: #ffffff;
+    }
+
+    /* ─── Font rendering ─────────────────────────────────────────────────── */
+    body {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ─── Scrollbar ──────────────────────────────────────────────────────── */
+    * { scrollbar-color: rgba(255,255,255,0.18) #27212e; scrollbar-width: thin; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #27212e; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.36); }
+
+    /* ─── Sidebar brand gradient — no underline ────────────────────────── */
+    .app-name-link {
+      background: linear-gradient(90deg, #ffffff 0%, #ed78c2 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+      text-decoration: none !important;
+    }
+
+    /* ─── Cover page ─────────────────────────────────────────────────────── */
+    section.cover::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 70% 40%, rgba(235, 100, 185, 0.12) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 60% at 20% 70%, rgba(130, 170, 255, 0.08) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    section.cover .cover-main { position: relative; z-index: 1; }
+
+    section.cover h1 span {
+      background: linear-gradient(90deg, #ffffff 0%, #ed78c2 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+    }
+
+    /* Cover page links and buttons — no underlines */
+    section.cover a,
+    section.cover .cover-main > p:last-child a {
+      text-decoration: none !important;
+    }
+
+    /* ─── Tables — exact Scalar style ───────────────────────────────────── */
+    .markdown-section table {
+      table-layout: fixed;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      border-collapse: separate;
+      border-spacing: 0;
+      width: max-content;
+      max-width: 100%;
+      margin: 1em 0;
+      overflow: hidden;
+      font-size: 13px;
+    }
+
+    .markdown-section th,
+    .markdown-section td {
+      vertical-align: top;
+      min-width: 1em;
+      padding: 8.5px 16px;
+      word-break: break-word;
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Last column — no right border */
+    .markdown-section th:last-child,
+    .markdown-section td:last-child { border-right: none; }
+
+    /* Last row — no bottom border */
+    .markdown-section tr:last-child td { border-bottom: none; }
+
+    /* Header */
+    .markdown-section th {
+      background: #27212e;
+      font-weight: 600;
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #b8b6ba;
+    }
+
+    /* ─── Extra Prism tokens not covered by --codeblock-* variables ──────── */
+
+    /* Numbers → --scalar-color-red (bright violet in laserwave) */
+    .token.number                         { color: #d887f5; }
+
+    /* Booleans / nil / null → --scalar-color-yellow */
+    .token.boolean, .token.null, .token.constant { color: #ffe261; }
+
+    /* Types / class names / builtins → medium purple (VS Code laserwave) */
+    .token.class-name, .token.builtin, .token.type { color: #a96bc0; }
+
+    /* Operators → --scalar-color-green */
+    .token.operator { color: #74dfc4; }
+
+    /* HTML attribute names → accent; values → pale blue */
+    .token.attr-name  { color: #ed78c2; }
+    .token.attr-value { color: #b4dce7; }
+
+    /* Package / namespace → --scalar-color-blue */
+    .token.namespace  { color: #40b4c4; }
+  </style>
+</head>
+<body class="sidebar-chevron-right sidebar-link-clamp">
+<div id="app"></div>
+
+<script>
+  window.$docsify = {
+    name: '📦 SVN SDK for Go',
+    repo: 'nentgroup/svn-sdk-go',
+    loadSidebar: true,
+    subMaxLevel: 3,
+    search: 'auto',
+    auto2top: true,
+    homepage: 'README.md',
+    coverpage: '_coverpage.md',
+    onlyCover: false,
+    copyCode: {
+      buttonText: 'Copy',
+      errorText: 'Error',
+      successText: 'Copied!'
+    },
+  };
+</script>
+
+<!-- Docsify v5 -->
+<script src="//cdn.jsdelivr.net/npm/docsify@5/dist/docsify.min.js"></script>
+
+<!-- v5 plugins -->
+<script src="//cdn.jsdelivr.net/npm/docsify@5/dist/plugins/search.min.js"></script>
+<script src="//cdn.jsdelivr.net/npm/docsify@5/dist/plugins/zoom.min.js"></script>
+
+<!-- Third-party plugins (compatible with v5) -->
+<script src="https://cdn.jsdelivr.net/npm/docsify-copy-code@2/dist/docsify-copy-code.min.js"></script>
+
+<!-- Prism syntax highlighting -->
+<script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-bash.min.js"></script>
+<script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-go.min.js"></script>
+<script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-json.min.js"></script>
+<script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-yaml.min.js"></script>
+</body>
+</html>
