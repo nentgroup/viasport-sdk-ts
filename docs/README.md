@@ -1,6 +1,6 @@
 # SVN SDK for TypeScript
 
-Generated TypeScript clients for Viaplay SVN services, produced from the OpenAPI specs in `api/`.
+Generated TypeScript clients for Viaplay SVN services.
 
 <!-- BEGIN GENERATED SDK VERSION -->
 > SDK version: `v0.1.10`

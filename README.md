@@ -1,6 +1,5 @@
 # Viasport SDK for TypeScript
 
-Generated TypeScript SDK for SVN/Viasport services from the OpenAPI specs in `api/`.
 
 > [!NOTE]
 > `src/service/`, `src/sdk.ts`, and `src/index.ts` are generated. Edit specs in `api/` and regenerate to make SDK changes.

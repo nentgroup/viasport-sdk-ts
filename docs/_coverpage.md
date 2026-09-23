@@ -6,7 +6,7 @@
 > v0.1.10
 <!-- END GENERATED SDK VERSION -->
 
-Go clients for Viaplay SVN services, generated from OpenAPI specs.
+TypeScript clients for Viaplay SVN services.
 
-[Get started](#svn-sdk-for-go)
-[GitHub](https://github.com/nentgroup/svn-sdk-go)
+[Get started](#svn-sdk-for-typescript)
+[GitHub](https://github.com/nentgroup/viasport-sdk-ts)
