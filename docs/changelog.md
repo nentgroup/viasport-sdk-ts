@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.8](https://github.com/nentgroup/viasport-sdk-ts/compare/v0.1.7...v0.1.8) (2026-09-23)
+
+
+### Bug Fixes
+
+* **ci:** deactivate npm publishing ([054b6ac](https://github.com/nentgroup/viasport-sdk-ts/commit/054b6ac5819bc5279ef607ec4ac15e7e738d58b8))
+
 ## [0.1.7](https://github.com/nentgroup/svn-sdk-ts/compare/v0.1.6...v0.1.7) (2026-09-23)
 
 
