@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.10](https://github.com/nentgroup/viasport-sdk-ts/compare/v0.1.9...v0.1.10) (2026-09-23)
+
+
+### Bug Fixes
+
+* **ci:** remove publish on tag ([62fccb5](https://github.com/nentgroup/viasport-sdk-ts/commit/62fccb53fe2249bd89bee15a9d9a5fb783f7fb29))
+* **ci:** stamp spec ref ([d9be4f1](https://github.com/nentgroup/viasport-sdk-ts/commit/d9be4f15f696291f2c1a06612c1a209630dc3e6c))
+
 ## [0.1.9](https://github.com/nentgroup/viasport-sdk-ts/compare/v0.1.8...v0.1.9) (2026-09-23)
 
 
