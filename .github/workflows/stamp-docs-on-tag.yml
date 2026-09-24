@@ -1,0 +1,49 @@
+name: stamp-docs-on-tag
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  id-token: write
+  packages: read
+
+jobs:
+  stamp-docs:
+    name: Stamp docs from release tag
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: '1.27'
+
+      - name: Stamp docs with release tag
+        env:
+          SDK_VERSION: ${{ github.ref_name }}
+        run: go -C tools run ./stamp-docs-sdk-version
+
+      - name: Commit and push stamped docs
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          if git diff --quiet; then
+            echo "No stamp changes to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add docs/README.md docs/_coverpage.md docs/index.html docs/api-reference.html
+          git commit -m "docs: stamp sdk docs for ${TAG_NAME} [skip release-please]"
+          git push origin HEAD:main

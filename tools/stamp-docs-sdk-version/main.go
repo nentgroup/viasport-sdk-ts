@@ -35,14 +35,14 @@ func main() {
 			{
 				Start:   "<!-- BEGIN GENERATED SDK HTML TITLE -->",
 				End:     "<!-- END GENERATED SDK HTML TITLE -->",
-				Content: fmt.Sprintf("  <title>SVN SDK for TypeScript %s</title>", version),
+				Content: fmt.Sprintf("  <title>Viasport SDK for TypeScript %s</title>", version),
 			},
 		},
 		filepath.Join(root, "docs", "api-reference.html"): {
 			{
 				Start:   "<!-- BEGIN GENERATED SDK HTML TITLE -->",
 				End:     "<!-- END GENERATED SDK HTML TITLE -->",
-				Content: fmt.Sprintf("    <title>Viasport API Reference — SVN SDK for TypeScript %s</title>", version),
+				Content: fmt.Sprintf("    <title>Viasport API Reference — Viasport SDK for TypeScript %s</title>", version),
 			},
 			{
 				Start:   "        <!-- BEGIN GENERATED SDK API REF TITLE -->",

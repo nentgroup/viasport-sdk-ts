@@ -54,7 +54,7 @@ jobs:
   release-please:
     name: Create or Update Semver Release
     needs: run-quality-checks
-    if: ${{ always() && github.ref == 'refs/heads/main' && (needs.run-quality-checks.result == 'success' || needs.run-quality-checks.result == 'skipped') }}
+    if: ${{ always() && github.ref == 'refs/heads/main' && (needs.run-quality-checks.result == 'success' || needs.run-quality-checks.result == 'skipped') && !contains(github.event.head_commit.message, '[skip release-please]') }}
     runs-on: ubuntu-latest
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
