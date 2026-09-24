@@ -1,12 +1,12 @@
-<!-- SVN SDK Coverpage -->
+<!-- Viasport SDK Coverpage -->
 
-# SVN SDK for TypeScript
+# Viasport SDK for TypeScript
 
 <!-- BEGIN GENERATED SDK VERSION -->
 > v0.1.10
 <!-- END GENERATED SDK VERSION -->
 
-TypeScript clients for Viaplay SVN services.
+TypeScript clients for Viasport services.
 
-[Get started](#svn-sdk-for-typescript)
+[Get started](#viasport-sdk-for-typescript)
 [GitHub](https://github.com/nentgroup/viasport-sdk-ts)
