@@ -188,10 +188,6 @@ jobs:
             -w /workspace \
             "$GECKO_TOOLS" sdkgen -docs-sidebar
 
-      - name: Stamp docs with SDK version
-        run: |
-          go -C tools run ./stamp-docs-sdk-version
-
       - name: Validate generated TypeScript SDK
         run: |
           npm run typecheck
