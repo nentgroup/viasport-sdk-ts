@@ -3,7 +3,7 @@
   "release-type": "node",
   "packages": {
     ".": {
-      "package-name": "@nentgroup/svn-sdk-ts",
+      "package-name": "@viaplay/viasport-sdk-ts",
       "changelog-path": "docs/changelog.md",
       "initial-version": "0.1.0",
       "prerelease": false,

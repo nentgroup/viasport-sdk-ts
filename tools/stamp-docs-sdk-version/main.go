@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/nentgroup/svn-sdk-ts/tools/internal/stamputil"
+	"github.com/nentgroup/viasport-sdk-ts/tools/internal/stamputil"
 )
 
 func main() {

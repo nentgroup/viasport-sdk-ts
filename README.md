@@ -7,17 +7,25 @@
 ## <picture><source media="(prefers-color-scheme: dark)" srcset="./.github/assets/icons/icon-install-dark.svg"><img src="./.github/assets/icons/icon-install.svg" alt="Installation" width="18" height="18" aria-label="Installation"></picture> Installation
 
 ```bash
-npm install @viaplay/svn-sdk-ts
+npm install github:nentgroup/viasport-sdk-ts#v0.2.1
+```
+
+Or add the tagged GitHub repository to your `package.json`:
+
+```json
+{
+  "dependencies": {
+    "@viaplay/viasport-sdk-ts": "github:nentgroup/viasport-sdk-ts#v0.2.1"
+  }
+}
 ```
 
 ## <picture><source media="(prefers-color-scheme: dark)" srcset="./.github/assets/icons/icon-quickstart-dark.svg"><img src="./.github/assets/icons/icon-quickstart.svg" alt="Quick start" width="18" height="18" aria-label="Quick start"></picture> Quick start
 
-### 1) Sign in and obtain an access key
-
-In practice, the SDK is normally used with an access key token already issued by the platform. Once you have that token, you can instantiate the client directly.
+Use an issued access key to instantiate the SDK:
 
 ```ts
-import { SDK } from '@viaplay/svn-sdk-ts';
+import { SDK } from '@viaplay/viasport-sdk-ts';
 
 const accessKey = process.env.ACCESS_KEY;
 
@@ -45,7 +53,7 @@ console.log(results.data.total);
 CommonJS is also supported:
 
 ```js
-const { SDK } = require('@viaplay/svn-sdk-ts');
+const { SDK } = require('@viaplay/viasport-sdk-ts');
 ```
 
 If you need to create the token first, the generated API includes `loginWithEmailAndPassword()` and `createAccessKey()` on the search service. This is useful for bootstrap scenarios, but for normal SDK usage you usually keep the issued `ACCESS_KEY` in environment variables and instantiate the SDK with it directly.
@@ -62,7 +70,7 @@ Optional shared settings are applied to every service created by the SDK:
 Use a standalone client when you only need a single service or want service-specific settings.
 
 ```ts
-import { API, Client } from '@viaplay/svn-sdk-ts/service/search';
+import { API, Client } from '@viaplay/viasport-sdk-ts/service/search';
 
 const search = new API(
   new Client({
@@ -100,7 +108,7 @@ console.log(results.data.total);
 You can also import a single service directly:
 
 ```ts
-import { API, Client } from '@viaplay/svn-sdk-ts/service/search';
+import { API, Client } from '@viaplay/viasport-sdk-ts/service/search';
 
 const search = new API(new Client({ accessKey: process.env.ACCESS_KEY }));
 ```

@@ -1,8 +1,8 @@
-# GitHub Copilot Instructions — svn-sdk-ts
+# GitHub Copilot Instructions — viasport-sdk-ts
 
 ## Repository overview
 
-`@nentgroup/svn-sdk-ts` is a generated TypeScript SDK for Viaplay SVN services
+`@viaplay/viasport-sdk-ts` is a generated TypeScript SDK for Viasport services
 (Auth, Catalog, Content, Search, Taxonomy). SDK source is generated from OpenAPI
 specs in `api/` using `sdkgen` via Task + Docker.
 
@@ -52,7 +52,7 @@ Use targeted checks when possible, but keep changes compatible with the CI path 
 ### Unified SDK (preferred for app code using multiple services)
 
 ```ts
-const { SDK } = require('@nentgroup/svn-sdk-ts');
+const { SDK } = require('@viaplay/viasport-sdk-ts');
 
 const sdk = new SDK({
   default: {
@@ -67,7 +67,7 @@ const sdk = new SDK({
 ### Standalone service client (preferred for single-service usage)
 
 ```ts
-const { API, Client } = require('@nentgroup/svn-sdk-ts/service/catalog');
+const { API, Client } = require('@viaplay/viasport-sdk-ts/service/catalog');
 
 const catalog = new API(
   new Client({
@@ -109,7 +109,7 @@ for await (const event of sdk.catalog.watchServicesSSE({})) {
 
 - Use Conventional Commits (`feat:`, `fix:`, `docs:`, etc.).
 - `release-please` drives versioning/tags/changelog from commit history.
-- Package identity is `@nentgroup/svn-sdk-ts` and release config lives in
+- Package identity is `@viaplay/viasport-sdk-ts` and release config lives in
   `.github/.release-please-config.json`.
 
 ---

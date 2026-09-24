@@ -1,5 +1,5 @@
 name: Code Quality Check, Test and Build
-description: Runs linting, formatting checks, typecheck, tests, and build for svn-sdk-ts
+description: Runs linting, formatting checks, typecheck, tests, and build for viasport-sdk-ts
 runs:
   using: 'composite'
   steps:
