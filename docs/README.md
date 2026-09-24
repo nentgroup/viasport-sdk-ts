@@ -1,100 +1,74 @@
-# SVN SDK for TypeScript
+<img src="../.github/assets/viaplay_logo.svg" align="right" height="96" width="96" alt="Viasport SDK logo" />
 
-Generated TypeScript clients for Viaplay SVN services.
+<br />
+
+# Viasport SDK for TypeScript
+
+Typed clients for the Viasport Search API, generated from the OpenAPI spec and published as a CommonJS package.
 
 <!-- BEGIN GENERATED SDK VERSION -->
 > SDK version: `v0.1.10`
 <!-- END GENERATED SDK VERSION -->
 
-> [!NOTE]
-> SDK source is generated. To change API surface or models, update the OpenAPI specs and regenerate with `task generate:all`.
-
-## Prerequisites
-
-- Node.js 24+
-- Docker
-- [Task](https://taskfile.dev/) (`task --version`)
-
-## Installation
+## <picture><source media="(prefers-color-scheme: dark)" srcset="../.github/assets/icons/icon-install-dark.svg"><img src="../.github/assets/icons/icon-install.svg" alt="Installation" width="18" height="18" aria-label="Installation"></picture> Installation
 
 ```bash
-npm install @nentgroup/svn-sdk-ts
+npm install @viaplay/svn-sdk-ts
 ```
 
-## Your first call
+## <picture><source media="(prefers-color-scheme: dark)" srcset="../.github/assets/icons/icon-quickstart-dark.svg"><img src="../.github/assets/icons/icon-quickstart.svg" alt="Quick start" width="18" height="18" aria-label="Quick start"></picture> Quick start
 
-This package is distributed as CommonJS.
+### 1) Configure the SDK with an issued access key
 
-```javascript
-const { SDK } = require("@viaplay/svn-sdk-ts");
+For normal usage, you already have an access key and can instantiate the SDK directly:
+
+```ts
+const { SDK } = require('@viaplay/svn-sdk-ts');
 
 const sdk = new SDK({
   default: {
     accessKey: process.env.ACCESS_KEY,
     baseURL: process.env.GATEWAY_URL,
+    timeoutMs: 10_000,
+    maxRetries: 3,
   },
 });
 
-const results = await sdk.search.search({ query: { query: "premier league", limit: 10 } });
+const results = await sdk.search.search({
+  query: {
+    contentType: 'sports',
+    country: 'se',
+    tag: 'sport:football',
+    limit: 10,
+  },
+});
+
 console.log(results.data.total);
 ```
 
-## Services
+If you need to create a key first, the generated API exposes `loginWithEmailAndPassword()` and `createAccessKey()` on the search service, but in day-to-day SDK usage you usually just set `ACCESS_KEY` and initialize the client that way.
 
-Use the unified `SDK` to access the generated service:
+## <picture><source media="(prefers-color-scheme: dark)" srcset="../.github/assets/icons/icon-services-dark.svg"><img src="../.github/assets/icons/icon-services.svg" alt="Services" width="18" height="18" aria-label="Services"></picture> Services
 
 | Service | SDK property | Service docs |
 |---|---|---|
 | Search | `sdk.search` | [Search Service](services/search.md) |
 
-## Standalone service client
-
-If you only need one service, import it directly:
-
-```javascript
-const { API, Client } = require("@viaplay/svn-sdk-ts/service/search");
-
-const search = new API(new Client({
-  accessKey: process.env.ACCESS_KEY,
-  baseURL: process.env.GATEWAY_URL,
-  timeoutMs: 10_000,
-  maxRetries: 3,
-}));
-
-const results = await search.search({ query: { query: "premier league", limit: 10 } });
-console.log(results.data.total);
-```
-
-## Error handling
-
-Operations throw typed payloads for known non-2xx responses. Unknown failures (network, timeout, unexpected status) are thrown as regular errors.
-
-```javascript
-try {
-  await sdk.search.retrieveAnArticleByID({ id: "unknown-id" });
-} catch (err) {
-  // For known API statuses, generated operations throw the response payload.
-  console.error(err);
-}
-```
-
-## SSE streaming
-
-The current public search SDK does not expose SSE operations.
-
-## Client configuration
-
-Each generated service client accepts this config shape:
+## <picture><source media="(prefers-color-scheme: dark)" srcset="../.github/assets/icons/icon-env-dark.svg"><img src="../.github/assets/icons/icon-env.svg" alt="Environment variables" width="18" height="18" aria-label="Environment variables"></picture> Client configuration
 
 | Field | Type | Default |
 |---|---|---|
 | `baseURL` | `string` | service internal URL (or `process.env.GATEWAY_URL` when set) |
 | `accessKey` | `string` | `process.env.ACCESS_KEY` or `""` |
-| `pathPrefix` | `string` | service-specific API path prefix |
 | `timeoutMs` | `number` | `10000` |
 | `maxRetries` | `number` | `3` |
 
-## Development commands
+## <picture><source media="(prefers-color-scheme: dark)" srcset="../.github/assets/icons/icon-docs-dark.svg"><img src="../.github/assets/icons/icon-docs.svg" alt="Generated files" width="18" height="18" aria-label="Generated files"></picture> Generated files
+
+> [!NOTE]
+> SDK source is generated. To change API surface or models, update the OpenAPI specs and regenerate with `task generate:all`.
+
+## <picture><source media="(prefers-color-scheme: dark)" srcset="../.github/assets/icons/icon-sync-dark.svg"><img src="../.github/assets/icons/icon-sync.svg" alt="Regeneration" width="18" height="18" aria-label="Regeneration"></picture> Development commands
 
 | Command | Description |
 |---|---|

@@ -1,58 +1,95 @@
+<img src="./.github/assets/viaplay_logo.svg" align="right" height="96" width="96" alt="Viasport SDK logo" />
+
+<br />
+
 # Viasport SDK for TypeScript
 
-
-> [!NOTE]
-> `src/service/`, `src/sdk.ts`, and `src/index.ts` are generated. Edit specs in `api/` and regenerate to make SDK changes.
-
-## Prerequisites
-
-- Node.js 24+
-- Docker
-- [Task](https://taskfile.dev/) (`task --version`)
-
-## Install
+## <picture><source media="(prefers-color-scheme: dark)" srcset="./.github/assets/icons/icon-install-dark.svg"><img src="./.github/assets/icons/icon-install.svg" alt="Installation" width="18" height="18" aria-label="Installation"></picture> Installation
 
 ```bash
 npm install @viaplay/svn-sdk-ts
 ```
 
-## Quick start
+## <picture><source media="(prefers-color-scheme: dark)" srcset="./.github/assets/icons/icon-quickstart-dark.svg"><img src="./.github/assets/icons/icon-quickstart.svg" alt="Quick start" width="18" height="18" aria-label="Quick start"></picture> Quick start
 
-This package is distributed as CommonJS.
+### 1) Sign in and obtain an access key
+
+In practice, the SDK is normally used with an access key token already issued by the platform. Once you have that token, you can instantiate the client directly.
 
 ```ts
 const { SDK } = require('@viaplay/svn-sdk-ts');
 
+const accessKey = process.env.ACCESS_KEY;
+
 const sdk = new SDK({
   default: {
-    accessKey: process.env.ACCESS_KEY,
+    accessKey,
     baseURL: process.env.GATEWAY_URL,
     timeoutMs: 10_000,
     maxRetries: 3,
   },
 });
 
-const results = await sdk.search.search({ query: { query: 'premier league', limit: 10 } });
+const results = await sdk.search.search({
+  query: {
+    contentType: 'sports',
+    country: 'se',
+    tag: 'sport:football',
+    limit: 10,
+  },
+});
+
 console.log(results.data.total);
 ```
 
-## Commands
+If you need to create the token first, the generated API includes `loginWithEmailAndPassword()` and `createAccessKey()` on the search service. This is useful for bootstrap scenarios, but for normal SDK usage you usually keep the issued `ACCESS_KEY` in environment variables and instantiate the SDK with it directly.
 
-| Command                                                       | Description                                      |
-| ------------------------------------------------------------- | ------------------------------------------------ |
-| `task generate:all`                                           | Regenerate search SDK and unified `sdk.ts`       |
-| `task generate SERVICE=search PKG=search SPEC=api/search.yml` | Regenerate one service                           |
-| `task generate:sdk`                                           | Regenerate only unified `sdk.ts`                 |
-| `npm run build`                                               | Generate SDK and compile TypeScript into `dist/` |
-| `npm run typecheck`                                           | Run TypeScript type-check without emitting files |
-| `npm test`                                                    | Build and run smoke tests                        |
-| `npm run ci`                                                  | Clean, install, build, and test pipeline         |
+Optional shared settings are applied to every service created by the SDK:
 
-## Services
+- `default.accessKey`
+- `default.baseURL`
+- `default.timeoutMs`
+- `default.maxRetries`
 
-The unified `SDK` exposes:
+### Standalone service client
 
-- `sdk.search`
+Use a standalone client when you only need a single service or want service-specific settings.
+
+```ts
+const { API, Client } = require('@viaplay/svn-sdk-ts/service/search');
+
+const search = new API(
+  new Client({
+    accessKey: process.env.ACCESS_KEY,
+    baseURL: process.env.GATEWAY_URL,
+    timeoutMs: 10_000,
+  }),
+);
+
+const results = await search.search({
+  query: {
+    contentType: 'sports',
+    country: 'se',
+    tag: 'sport:football',
+    limit: 5,
+  },
+});
+
+console.log(results.data.total);
+```
+
+## <picture><source media="(prefers-color-scheme: dark)" srcset="./.github/assets/icons/icon-env-dark.svg"><img src="./.github/assets/icons/icon-env.svg" alt="Environment variables" width="18" height="18" aria-label="Environment variables"></picture> Environment variables
+
+| Variable | Used by | Description |
+|---|---|---|
+| `ACCESS_KEY` | SDK and standalone clients | Authentication key used to authorize requests |
+| `GATEWAY_URL` | SDK and standalone clients | Override the shared gateway base URL |
+
+## <picture><source media="(prefers-color-scheme: dark)" srcset="./.github/assets/icons/icon-services-dark.svg"><img src="./.github/assets/icons/icon-services.svg" alt="Services" width="18" height="18" aria-label="Services"></picture> Services
+
+| SDK field | Package | What it is for |
+|---|---|---|
+| `sdk.search` | `service/search` | Search and article retrieval endpoints |
 
 You can also import a single service directly:
 
@@ -61,11 +98,54 @@ const { API, Client } = require('@viaplay/svn-sdk-ts/service/search');
 const search = new API(new Client({ accessKey: process.env.ACCESS_KEY }));
 ```
 
-## Repository layout
+## <picture><source media="(prefers-color-scheme: dark)" srcset="./.github/assets/icons/icon-layout-dark.svg"><img src="./.github/assets/icons/icon-layout.svg" alt="Project layout" width="18" height="18" aria-label="Project layout"></picture> Project layout
 
-- `api/` OpenAPI specs (source of truth)
-- `src/service/<name>/` generated per-service TypeScript clients
-- `src/sdk.ts` generated unified top-level SDK
-- `src/index.ts` generated package entrypoint
-- `docs/` generated docs and API reference
-- `test/` smoke tests
+```text
+api/                 OpenAPI specs; source of truth
+src/service/         Generated per-service TypeScript clients
+src/sdk.ts           Generated unified top-level SDK entrypoint
+src/index.ts         Generated package entrypoint
+docs/                Generated docs and API reference assets
+test/                Smoke tests and validation scripts
+```
+
+## <picture><source media="(prefers-color-scheme: dark)" srcset="./.github/assets/icons/icon-docs-dark.svg"><img src="./.github/assets/icons/icon-docs.svg" alt="Generated files" width="18" height="18" aria-label="Generated files"></picture> Generated files
+
+> [!NOTE]
+> `src/service/`, `src/sdk.ts`, and `src/index.ts` are generated. Edit specs in `api/` and regenerate to make SDK changes.
+
+Files that start with:
+
+```ts
+// Code generated by sdkgen. DO NOT EDIT.
+```
+
+should not be edited by hand. Make change in `api/*.yml`, then regenerate the affected output.
+
+## <picture><source media="(prefers-color-scheme: dark)" srcset="./.github/assets/icons/icon-sync-dark.svg"><img src="./.github/assets/icons/icon-sync.svg" alt="Regeneration" width="18" height="18" aria-label="Regeneration"></picture> Regeneration
+
+```bash
+task generate:all      # regenerate all services + unified sdk.ts
+task generate:sdk      # regenerate only unified sdk.ts
+task generate SERVICE=search PKG=search SPEC=api/search.yml
+```
+
+### Commands
+
+| Command | Description |
+|---|---|
+| `task generate:all` | Regenerate the search SDK and unified `sdk.ts` |
+| `task generate SERVICE=search PKG=search SPEC=api/search.yml` | Regenerate one service |
+| `task generate:sdk` | Regenerate only unified `sdk.ts` |
+| `npm run build` | Generate SDK and compile TypeScript into `dist/` |
+| `npm run typecheck` | Run TypeScript type-check without emitting files |
+| `npm test` | Build and run smoke tests |
+| `npm run ci` | Clean, install, build, and test pipeline |
+
+## <picture><source media="(prefers-color-scheme: dark)" srcset="./.github/assets/icons/icon-features-dark.svg"><img src="./.github/assets/icons/icon-features.svg" alt="Features" width="18" height="18" aria-label="Features"></picture> Features
+
+- Generated TypeScript clients from OpenAPI specs
+- Unified top-level SDK for shared configuration
+- Standalone service clients for focused integrations
+- Type-safe request/response handling
+- Simple regeneration workflow via Task and Docker
