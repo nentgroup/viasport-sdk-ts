@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/nentgroup/viasport-sdk-ts/compare/v0.3.0...v0.3.1) (2026-09-24)
+
+
+### Bug Fixes
+
+* **apispec:** update security schema on loginWithPassword ([7af04d8](https://github.com/nentgroup/viasport-sdk-ts/commit/7af04d8f333110bbc57b225248304e36d891a508))
+
 ## [0.3.0](https://github.com/nentgroup/viasport-sdk-ts/compare/v0.2.0...v0.3.0) (2026-09-24)
 
 
