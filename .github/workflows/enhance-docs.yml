@@ -79,7 +79,7 @@ jobs:
 
       # Checkout is required to read .github/copilot-instructions.md
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Post Copilot enhancement request
         if: ${{ steps.guard.outputs.should_comment == 'true' }}
