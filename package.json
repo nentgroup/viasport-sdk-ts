@@ -14,21 +14,24 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "import": "./dist/esm/index.mjs",
       "require": "./dist/index.js"
     },
     "./sdk": {
       "types": "./dist/sdk.d.ts",
+      "import": "./dist/esm/sdk.mjs",
       "require": "./dist/sdk.js"
     },
     "./service/search": {
       "types": "./dist/service/search/index.d.ts",
+      "import": "./dist/esm/service/search/index.mjs",
       "require": "./dist/service/search/index.js"
     }
   },
   "scripts": {
     "clean": "task clean",
     "generate": "task generate:all",
-    "build": "tsc -p tsconfig.json --noCheck",
+    "build": "tsc -p tsconfig.json --noCheck && node scripts/create-esm-entrypoints.cjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint . --color",
     "prettier": "prettier --check .",

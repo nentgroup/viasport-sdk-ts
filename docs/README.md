@@ -4,7 +4,7 @@
 
 # Viasport SDK for TypeScript
 
-Typed clients for the Viasport Search API, generated from the OpenAPI spec and published as a CommonJS package.
+Typed clients for the Viasport Search API, generated from the OpenAPI spec and published for both ESM `import` and CommonJS `require` consumers.
 
 <!-- BEGIN GENERATED SDK VERSION -->
 > SDK version: `v0.1.10`
@@ -23,7 +23,7 @@ npm install @viaplay/svn-sdk-ts
 For normal usage, you already have an access key and can instantiate the SDK directly:
 
 ```ts
-const { SDK } = require('@viaplay/svn-sdk-ts');
+import { SDK } from '@viaplay/svn-sdk-ts';
 
 const sdk = new SDK({
   default: {
@@ -44,6 +44,12 @@ const results = await sdk.search.search({
 });
 
 console.log(results.data.total);
+```
+
+CommonJS is also supported:
+
+```js
+const { SDK } = require('@viaplay/svn-sdk-ts');
 ```
 
 If you need to create a key first, the generated API exposes `loginWithEmailAndPassword()` and `createAccessKey()` on the search service, but in day-to-day SDK usage you usually just set `ACCESS_KEY` and initialize the client that way.
