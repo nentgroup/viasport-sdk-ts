@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.2.0](https://github.com/nentgroup/viasport-sdk-ts/compare/v0.1.11...v0.2.0) (2026-09-24)
+
+
+### Features
+
+* support ESM and CommonJS imports ([5c2623a](https://github.com/nentgroup/viasport-sdk-ts/commit/5c2623a05a96384f9748f778679b86c40cfa5967))
+* switch SDK build to tsup dual cjs/esm outputs ([67d1b9c](https://github.com/nentgroup/viasport-sdk-ts/commit/67d1b9c60a126741df79aa1bcd156da28708ba36))
+
+
+### Bug Fixes
+
+* **docs:** fix anchors and old references ([6deaf15](https://github.com/nentgroup/viasport-sdk-ts/commit/6deaf15d5efe68cec1755f99a49d5411186a1c44))
+* update strip path ([76a874b](https://github.com/nentgroup/viasport-sdk-ts/commit/76a874b68002314ff7012e5670f3a5f2fa6cbd31))
+
+
+### Documentation
+
+* refactor docs ([bb32e14](https://github.com/nentgroup/viasport-sdk-ts/commit/bb32e1407f4d72430ae003374da69b5bd06b1755))
+* update prompts ([e13b300](https://github.com/nentgroup/viasport-sdk-ts/commit/e13b3006cd2770ffdb26e37122397e8bcfc5fa23))
+* update titles and headers ([508433b](https://github.com/nentgroup/viasport-sdk-ts/commit/508433ba8303066f73771ba2a50983008fd0c2a5))
+
 ## [0.1.11](https://github.com/nentgroup/viasport-sdk-ts/compare/v0.1.10...v0.1.11) (2026-09-23)
 
 
