@@ -34,7 +34,7 @@ export class Client {
   constructor(config: ClientConfig = {}) {
     this.baseURL = config.baseURL ?? process.env.GATEWAY_URL ?? defaultGatewayURL;
     this.accessKey = config.accessKey ?? process.env.ACCESS_KEY ?? "";
-    this.pathPrefix = config.pathPrefix ?? "";
+    this.pathPrefix = config.pathPrefix ?? "search";
     this.timeoutMs = config.timeoutMs ?? 10_000;
     this.maxRetries = config.maxRetries ?? 3;
   }

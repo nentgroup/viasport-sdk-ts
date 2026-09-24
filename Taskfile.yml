@@ -3,7 +3,7 @@ version: '3'
 
 vars:
   DOCKER: '{{.DOCKER | default "docker"}}'
-  GECKO_TOOLS: '{{.GECKO_TOOLS | default "ghcr.io/nentgroup/gecko-tools:edge"}}'
+  GECKO_TOOLS: '{{.GECKO_TOOLS | default "ghcr.io/nentgroup/gecko-tools:local"}}'
 
 tasks:
   default:
@@ -23,7 +23,7 @@ tasks:
       PKG: '{{.PKG | default "search"}}'
       SPEC: '{{.SPEC | default (printf "api/%s.yml" .SERVICE)}}'
       SERVER: '{{.SERVER | default ""}}'
-      STRIP_PREFIX: '{{.STRIP_PREFIX | default ""}}'
+      STRIP_PREFIX: '{{.STRIP_PREFIX | default "search"}}'
       IGNORE: '{{.IGNORE | default ""}}'
       DOCS_OUT: '{{.DOCS_OUT | default ""}}'
     cmds:
