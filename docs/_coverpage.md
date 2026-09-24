@@ -3,7 +3,7 @@
 # Viasport SDK for TypeScript
 
 <!-- BEGIN GENERATED SDK VERSION -->
-> v0.1.10
+> v0.3.2
 <!-- END GENERATED SDK VERSION -->
 
 TypeScript clients for Viasport services.

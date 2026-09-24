@@ -3,7 +3,7 @@
 Typed clients for the Viasport Search API, generated from the OpenAPI spec and available for both ESM `import` and CommonJS `require` consumers.
 
 <!-- BEGIN GENERATED SDK VERSION -->
-> SDK version: `v0.1.10`
+> SDK version: `v0.3.2`
 <!-- END GENERATED SDK VERSION -->
 
 ## Installation
