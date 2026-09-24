@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/nentgroup/viasport-sdk-ts/compare/v0.3.1...v0.3.2) (2026-09-24)
+
+
+### Bug Fixes
+
+* **ci:** stamp docs only on semver tag pushes ([1fa374b](https://github.com/nentgroup/viasport-sdk-ts/commit/1fa374be80fbd39c5df3e5b75eef9bddfdc81c4a))
+
 ## [0.3.1](https://github.com/nentgroup/viasport-sdk-ts/compare/v0.3.0...v0.3.1) (2026-09-24)
 
 
