@@ -206,7 +206,7 @@ jobs:
           bash .github/scripts/ensure-regenerate-pr-labels.sh
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           # Use a PAT (not GITHUB_TOKEN) so the sdk-regeneration label event
           # is not suppressed and can trigger the enhance-docs workflow.
