@@ -1,6 +1,6 @@
 {
   "name": "@viaplay/viasport-sdk-ts",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "TypeScript SDK for Viasport services",
   "type": "commonjs",
   "license": "MIT",

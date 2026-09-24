@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.3.0](https://github.com/nentgroup/viasport-sdk-ts/compare/v0.2.0...v0.3.0) (2026-09-24)
+
+
+### Features
+
+* prepare installation from private repo ([6769eb8](https://github.com/nentgroup/viasport-sdk-ts/commit/6769eb8dee785aa08f262e12d73a974c5adbca58))
+
+
+### Dependencies
+
+* **deps:** update actions/checkout action to v7 ([#3](https://github.com/nentgroup/viasport-sdk-ts/issues/3)) ([35176d7](https://github.com/nentgroup/viasport-sdk-ts/commit/35176d7f48d86d523bb868a991bba5d6a9f153b2))
+* **deps:** update actions/setup-go action to v7 ([#8](https://github.com/nentgroup/viasport-sdk-ts/issues/8)) ([de69243](https://github.com/nentgroup/viasport-sdk-ts/commit/de69243425b24388f9f4048a82fcb1f5fc6743ce))
+* **deps:** update actions/setup-node action to v7 ([#9](https://github.com/nentgroup/viasport-sdk-ts/issues/9)) ([d2e2a63](https://github.com/nentgroup/viasport-sdk-ts/commit/d2e2a63e2a9b533d61714e8aca28236cd797eead))
+* **deps:** update actions/upload-artifact action to v7 ([#10](https://github.com/nentgroup/viasport-sdk-ts/issues/10)) ([ff3bf7a](https://github.com/nentgroup/viasport-sdk-ts/commit/ff3bf7a103ae13be27637fc51c956ad9e53823f2))
+* **deps:** update dependency eslint to v10 ([#11](https://github.com/nentgroup/viasport-sdk-ts/issues/11)) ([a8b6d8d](https://github.com/nentgroup/viasport-sdk-ts/commit/a8b6d8d51bef47167cede46d8dcec635e53b7c59))
+* **deps:** update dependency go to 1.27 ([#2](https://github.com/nentgroup/viasport-sdk-ts/issues/2)) ([99ec7e7](https://github.com/nentgroup/viasport-sdk-ts/commit/99ec7e7d176b16f003c37b5625fbea572c95cd99))
+* **deps:** update dependency typescript to v7 ([#15](https://github.com/nentgroup/viasport-sdk-ts/issues/15)) ([6aaa9ff](https://github.com/nentgroup/viasport-sdk-ts/commit/6aaa9ff47061885a6fd5a05a51c77bedc3c4c4f0))
+* **deps:** update docker/login-action action to v4 ([#16](https://github.com/nentgroup/viasport-sdk-ts/issues/16)) ([d15c656](https://github.com/nentgroup/viasport-sdk-ts/commit/d15c656718f54ba9a89031bb41dca2bdccae4d79))
+* **deps:** update peter-evans/create-pull-request action to v8 ([#17](https://github.com/nentgroup/viasport-sdk-ts/issues/17)) ([ac5f4d7](https://github.com/nentgroup/viasport-sdk-ts/commit/ac5f4d71d3a935cf8d0ea17849529b6732c4aa69))
+
 ## [0.2.0](https://github.com/nentgroup/viasport-sdk-ts/compare/v0.1.11...v0.2.0) (2026-09-24)
 
 
