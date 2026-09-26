@@ -11,65 +11,6 @@ export class API {
    */
   constructor(private readonly client: Client) {}
   /**
-   * Search and list articles. Returns a HAL collection.
-   *
-   * Set `limit` to the desired page size and follow `links.next.href` to walk
-   * the rest of the result set. The link carries a `cursor` token that the
-   * service uses to continue exactly where the previous page ended; pass it
-   * through unchanged. The `next` link is omitted on the last page.
-   *
-   * Use `?tag=kind:value` (repeatable) to filter by taxonomy. Multiple values
-   * for the same kind are OR-ed; different kinds are AND-ed:
-   *
-   * ```
-   * ?tag=team:real-madrid&tag=team:fc-barcelona     → Real Madrid OR FC Barcelona
-   * ?tag=sport:football&tag=team:real-madrid        → football AND Real Madrid
-   * ```
-   */
-  async search(args: {query?: Record<string, unknown>;
-  }): Promise<{ data: { count: number; limit: number; total: number }; embedded: { articles: { data: Models.Article; links: { self: { href: string } } }[] }; links: { next?: { href: string }; self: { href: string } } }> {
-    const path = `/articles`;
-    try {
-    return this.client.request<{ data: { count: number; limit: number; total: number }; embedded: { articles: { data: Models.Article; links: { self: { href: string } } }[] }; links: { next?: { href: string }; self: { href: string } } }>("GET", path, args.query, undefined);
-    } catch (err) {
-      const e = err as { status?: number; payload?: unknown };
-      switch (e.status) {
-      case 400:
-        throw (e.payload as Models.ErrBadRequest);
-      case 401:
-        throw (e.payload as Models.ErrUnAuthorized);
-      case 422:
-        throw (e.payload as Models.ErrValidation);
-      case 500:
-        throw (e.payload as Models.ErrInternal);
-      default:
-        throw err;
-      }
-    }
-  }
-  /**
-   * Retrieve an article by id
-   */
-  async retrieveAnArticleByID(args: {id: string;
-  }): Promise<{ data: Models.Article; links: { self: { href: string } } }> {
-    const path = `/articles/${args.id}`;
-    try {
-    return this.client.request<{ data: Models.Article; links: { self: { href: string } } }>("GET", path, undefined, undefined);
-    } catch (err) {
-      const e = err as { status?: number; payload?: unknown };
-      switch (e.status) {
-      case 401:
-        throw (e.payload as Models.ErrUnAuthorized);
-      case 404:
-        throw (e.payload as Models.ErrNotFound);
-      case 500:
-        throw (e.payload as Models.ErrInternal);
-      default:
-        throw err;
-      }
-    }
-  }
-  /**
    * You can create access keys to authenticate API requests without using your email and password.
    * This is useful for integrating with third-party services or automating tasks. Each access key is associated with a user and has the same permissions as that user.
    */
@@ -105,6 +46,65 @@ export class API {
         throw (e.payload as Models.ErrBadRequest);
       case 401:
         throw (e.payload as Models.ErrUserAuthenticationFailed);
+      default:
+        throw err;
+      }
+    }
+  }
+  /**
+   * Search and list articles. Returns a HAL collection.
+   *
+   * Set `limit` to the desired page size and follow `links.next.href` to walk
+   * the rest of the result set. The link carries a `cursor` token that the
+   * service uses to continue exactly where the previous page ended; pass it
+   * through unchanged. The `next` link is omitted on the last page.
+   *
+   * Use `?tag=kind:value` (repeatable) to filter by taxonomy. Multiple values
+   * for the same kind are OR-ed; different kinds are AND-ed:
+   *
+   * ```
+   * ?tag=team:real-madrid&tag=team:fc-barcelona     → Real Madrid OR FC Barcelona
+   * ?tag=sport:football&tag=team:real-madrid        → football AND Real Madrid
+   * ```
+   */
+  async search(args: {query?: Record<string, unknown>;
+  }): Promise<{ data: { count: number; limit: number; total: number }; embedded: { articles: { data: Models.Article; links: { self: { href: string } } }[] }; links: { next?: { href: string }; self: { href: string } } }> {
+    const path = `/search/articles`;
+    try {
+    return this.client.request<{ data: { count: number; limit: number; total: number }; embedded: { articles: { data: Models.Article; links: { self: { href: string } } }[] }; links: { next?: { href: string }; self: { href: string } } }>("GET", path, args.query, undefined);
+    } catch (err) {
+      const e = err as { status?: number; payload?: unknown };
+      switch (e.status) {
+      case 400:
+        throw (e.payload as Models.ErrBadRequest);
+      case 401:
+        throw (e.payload as Models.ErrUnAuthorized);
+      case 422:
+        throw (e.payload as Models.ErrValidation);
+      case 500:
+        throw (e.payload as Models.ErrInternal);
+      default:
+        throw err;
+      }
+    }
+  }
+  /**
+   * Retrieve an article by id
+   */
+  async retrieveAnArticleByID(args: {id: string;
+  }): Promise<{ data: Models.Article; links: { self: { href: string } } }> {
+    const path = `/search/articles/${args.id}`;
+    try {
+    return this.client.request<{ data: Models.Article; links: { self: { href: string } } }>("GET", path, undefined, undefined);
+    } catch (err) {
+      const e = err as { status?: number; payload?: unknown };
+      switch (e.status) {
+      case 401:
+        throw (e.payload as Models.ErrUnAuthorized);
+      case 404:
+        throw (e.payload as Models.ErrNotFound);
+      case 500:
+        throw (e.payload as Models.ErrInternal);
       default:
         throw err;
       }

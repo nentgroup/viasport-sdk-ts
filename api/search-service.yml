@@ -468,7 +468,6 @@ paths:
         - Authentication
       summary: Login with email and password
       operationId: Login with email and password
-      security: []
       requestBody:
         required: true
         content:
